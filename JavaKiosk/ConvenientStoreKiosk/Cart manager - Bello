@@ -2,6 +2,7 @@ package kiosk;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,7 @@ public class CartPage extends JFrame {
     private final Map<String, String> imageFileMap = new HashMap<>();
     private JPanel itemsPanel;
     private JLabel totalLabel;
+    private JPanel topPanel, bottomPanel;
 
     public CartPage() {
         setTitle("Cart");
@@ -19,7 +21,7 @@ public class CartPage extends JFrame {
         setLayout(new BorderLayout());
 
         // Top panel
-        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(Color.WHITE);
         JLabel imageLabel = new JLabel();
         String imgPath = "kiosk/resources/cart_icon.png";
@@ -34,7 +36,7 @@ public class CartPage extends JFrame {
         topPanel.add(imageLabel, BorderLayout.WEST);
         add(topPanel, BorderLayout.NORTH);
 
-        // Image file mapping
+        
         imageFileMap.put("Chippy", "chippy.jpg");
         imageFileMap.put("Chips Ahoy", "chipsahoy.jpg");
         imageFileMap.put("Chips Delight", "chipsdelight.jpg");
@@ -52,7 +54,7 @@ public class CartPage extends JFrame {
         imageFileMap.put("Household", "household.png");
         imageFileMap.put("Personal Care", "personal_care.png");
 
-        // Items panel setup
+        
         itemsPanel = new JPanel();
         itemsPanel.setLayout(new BoxLayout(itemsPanel, BoxLayout.Y_AXIS));
         itemsPanel.setBackground(Color.WHITE);
@@ -62,21 +64,33 @@ public class CartPage extends JFrame {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Bottom panel
-        JPanel bottomPanel = new JPanel(new GridLayout(5, 1, 5, 5));
+       
+        bottomPanel = new JPanel(new GridLayout(6, 1, 5, 5));
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         bottomPanel.setBackground(Color.WHITE);
 
-        JButton pwdDiscountBtn = new JButton("Apply 20% Discount for PWD");
-        pwdDiscountBtn.addActionListener(e -> {
-            CartManager.applyDiscount(true);
-            updateCartPage();
+        
+        JRadioButton pwdRadio = new JRadioButton("PWD (20% Discount)");
+        JRadioButton seniorRadio = new JRadioButton("Senior Citizen (20% Discount)");
+        ButtonGroup discountGroup = new ButtonGroup();
+        discountGroup.add(pwdRadio);
+        discountGroup.add(seniorRadio);
+        pwdRadio.setBackground(Color.WHITE);
+        seniorRadio.setBackground(Color.WHITE);
+
+        
+        pwdRadio.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                CartManager.applyDiscount(true);
+                updateCartPage();
+            }
         });
 
-        JButton seniorDiscountBtn = new JButton("Apply 20% Discount for Senior Citizen");
-        seniorDiscountBtn.addActionListener(e -> {
-            CartManager.applyDiscount(true);
-            updateCartPage();
+        seniorRadio.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                CartManager.applyDiscount(true);
+                updateCartPage();
+            }
         });
 
         totalLabel = new JLabel("Total: ₱" + String.format("%.2f", CartManager.getTotal()), SwingConstants.CENTER);
@@ -85,9 +99,20 @@ public class CartPage extends JFrame {
 
         JButton checkoutBtn = new JButton("Checkout");
         checkoutBtn.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Thank you for your purchase! Total Paid: ₱" + String.format("%.2f", CartManager.getTotal()));
-            CartManager.clearCart();
-            dispose();
+            int response = JOptionPane.showConfirmDialog(this, 
+                "Would you like to make a new purchase?", 
+                "New Purchase", 
+                JOptionPane.YES_NO_OPTION);
+
+            if (response == JOptionPane.YES_OPTION) {
+                CartManager.clearCart();
+                dispose();
+                new FoodsAndBeveragesPage();
+            } else {
+                JOptionPane.showMessageDialog(this, "Thank you for your purchase!");
+                CartManager.clearCart();
+                dispose();
+            }
         });
 
         JButton backBtn = new JButton("Back");
@@ -96,15 +121,15 @@ public class CartPage extends JFrame {
             new FoodsAndBeveragesPage();
         });
 
-        bottomPanel.add(pwdDiscountBtn);
-        bottomPanel.add(seniorDiscountBtn);
+        bottomPanel.add(pwdRadio);
+        bottomPanel.add(seniorRadio);
         bottomPanel.add(totalLabel);
         bottomPanel.add(checkoutBtn);
         bottomPanel.add(backBtn);
 
         add(bottomPanel, BorderLayout.SOUTH);
 
-        updateCartPage(); 
+        updateCartPage();
         setVisible(true);
     }
 
@@ -144,6 +169,7 @@ public class CartPage extends JFrame {
 
             JLabel nameLabel = new JLabel(item);
             nameLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+            nameLabel.setForeground(Color.BLACK);
             gbc.gridx = 1;
             gbc.gridy = 0;
             gbc.gridheight = 1;
@@ -167,6 +193,7 @@ public class CartPage extends JFrame {
             double price = cartPrices.get(item);
             JLabel priceLabel = new JLabel("₱" + String.format("%.2f", price * cartItems.get(item)));
             priceLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+            priceLabel.setForeground(Color.BLACK);
             gbc.gridx = 2;
             gbc.gridy = 0;
             gbc.gridheight = 2;
