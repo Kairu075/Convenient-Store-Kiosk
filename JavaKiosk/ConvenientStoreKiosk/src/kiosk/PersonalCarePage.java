@@ -1,18 +1,19 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
-import java.text.DecimalFormat;
+import javax.swing.*;
+import javax.swing.border.*;
 
-public class PersonalCarePage extends JFrame {
+public class PersonalCarePage extends JPanel implements KioskPage {
     private JPanel productPanel;
     private Map<String, List<String>> products;
     private Map<String, List<Double>> prices;
+    private Map<String, List<String>> images; // Map to store image filenames
     private JButton bathButton, hairButton, oralButton, skinButton;
     private JButton activeButton;
     private JLabel cartCountLabel;
@@ -32,21 +33,14 @@ public class PersonalCarePage extends JFrame {
     private final Font REGULAR_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
 
-    public PersonalCarePage() {
-        this(true);
-    }
-    
-    public PersonalCarePage(boolean showImmediately) {
-        setTitle("Personal Care & Hygiene");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 800);
-        setLocationRelativeTo(null);
+    private KioskMainPage parent;
+
+    public PersonalCarePage(KioskMainPage parent) {
+        this.parent = parent;
         setLayout(new BorderLayout(0, 0));
-        getContentPane().setBackground(BACKGROUND_COLOR);
+        setBackground(BACKGROUND_COLOR);
 
         initProducts();
-
-        // Create main components
         JPanel topPanel = createTopPanel();
         JPanel headerPanel = createHeaderPanel();
         JPanel subcategoryPanel = createSubcategoryPanel();
@@ -71,34 +65,46 @@ public class PersonalCarePage extends JFrame {
         showProducts("Bath & Body");
         highlightButton(bathButton);
         
-        if (showImmediately) {
-            setVisible(true);
-        }
+        setVisible(true);
     }
 
     private void initProducts() {
         products = new HashMap<>();
         prices = new HashMap<>();
-
+        images = new HashMap<>(); // Initialize the images map
+        
         products.put("Bath & Body", Arrays.asList(
             "Soap", "Shower Gel", "Body Lotion", "Body Scrub", "Bath Salts"
         ));
         prices.put("Bath & Body", Arrays.asList(
             50.0, 120.0, 200.0, 150.0, 180.0
         ));
+        images.put("Bath & Body", Arrays.asList(
+            "soap.jpg", "showergel.jpg", "bodylotion.png", "bodyscrub.jpg", "bathsalts.jpg"
+        ));
 
         products.put("Hair Care", Arrays.asList(
             "Shampoo", "Conditioner", "Hair Oil", "Hair Mask", "Hair Spray"
         ));
-        prices.put("Hair Care", Arrays.asList(
-            100.0, 120.0, 250.0, 300.0, 150.0
-        ));
 
+        prices.put("Hair Care", Arrays.asList(
+            100.0, 150.0, 200.0, 250.0, 300.0
+        ));
+        
+        images.put("Hair Care", Arrays.asList(
+            "shampoo.jpg", "conditioner.jpg", "hairoil.jpg", "hairmask.jpg", "hairspray.png"
+        ));
+        
         products.put("Oral Care", Arrays.asList(
+            "shampoo.jpg", "conditioner.jpg", "hairoil.jpg", "hairmask.jpg", "hairspray.png"
+        ));        products.put("Oral Care", Arrays.asList(
             "Toothpaste", "Mouthwash", "Dental Floss", "Toothbrush", "Whitening Strips"
         ));
         prices.put("Oral Care", Arrays.asList(
             80.0, 150.0, 100.0, 50.0, 200.0
+        ));
+        images.put("Oral Care", Arrays.asList(
+            "toothpaste.jpg", "mouthwash.jpg", "dentalfloss.jpg", "toothbrush.png", "whiteningstrips.jpg"
         ));
 
         products.put("Skin Care", Arrays.asList(
@@ -106,6 +112,9 @@ public class PersonalCarePage extends JFrame {
         ));
         prices.put("Skin Care", Arrays.asList(
             120.0, 250.0, 300.0, 200.0, 400.0
+        ));
+        images.put("Skin Care", Arrays.asList(
+            "facewash.jpg", "moisturizer.jpg", "sunscreen.jpg", "facemask.jpg", "serum.png"
         ));
     }
 
@@ -122,10 +131,7 @@ public class PersonalCarePage extends JFrame {
         JButton menuButton = createIconButton("☰", "Main Menu");
         menuButton.setFont(new Font("SansSerif", Font.BOLD, 24));
         menuButton.setPreferredSize(new Dimension(45, 40));
-        menuButton.addActionListener(e -> {
-            dispose();  // Close this window instead of using panel manager
-            new KioskMainPage();  // Open the main page directly
-        });
+        menuButton.addActionListener(e -> backToMain());
         
         searchBar = new JTextField(25);
         searchBar.setPreferredSize(new Dimension(280, 40));
@@ -191,8 +197,9 @@ public class PersonalCarePage extends JFrame {
         JButton backButton = createIconButton("←", "Back");
         backButton.setToolTipText("Return to main menu");
         backButton.addActionListener(e -> {
-            dispose();  // Close this window instead of using panel manager
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
         
         JPanel cartPanel = new JPanel(new BorderLayout(5, 0));
@@ -215,8 +222,9 @@ public class PersonalCarePage extends JFrame {
         cartPanel.add(cartCountLabel, BorderLayout.EAST);
         
         cartButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new CartPage();  // Open the cart page directly
+            if (parent != null) {
+                parent.showCartPage();
+            }
         });
         
         rightPanel.add(helpButton);
@@ -332,13 +340,15 @@ public class PersonalCarePage extends JFrame {
             
             List<String> items = products.get(actualCategory);
             List<Double> itemPrices = prices.get(actualCategory);
+            List<String> itemImages = images.get(actualCategory); // Get images for the category
             
             if (items != null && itemPrices != null && items.size() == itemPrices.size()) {
                 for (int i = 0; i < items.size(); i++) {
                     String itemName = items.get(i);
                     double itemPrice = itemPrices.get(i);
+                    String itemImage = itemImages != null && i < itemImages.size() ? itemImages.get(i) : null;
                                 
-                    JPanel productCard = createProductCard(itemName, itemPrice);
+                    JPanel productCard = createProductCard(itemName, itemPrice, itemImage);
                     productPanel.add(productCard);
                 }
             }
@@ -356,13 +366,15 @@ public class PersonalCarePage extends JFrame {
         for (String category : products.keySet()) {
             List<String> items = products.get(category);
             List<Double> itemPrices = prices.get(category);
+            List<String> itemImages = images.get(category); // Get images for the category
             
             for (int i = 0; i < items.size(); i++) {
                 String itemName = items.get(i);
                 
                 if (itemName.toLowerCase().contains(query)) {
                     double itemPrice = itemPrices.get(i);
-                    JPanel productCard = createProductCard(itemName, itemPrice);
+                    String itemImage = itemImages != null && i < itemImages.size() ? itemImages.get(i) : null;
+                    JPanel productCard = createProductCard(itemName, itemPrice, itemImage);
                     productPanel.add(productCard);
                     resultCount++;
                 }
@@ -407,7 +419,7 @@ public class PersonalCarePage extends JFrame {
         productPanel.repaint();
     }
 
-    private JPanel createProductCard(String itemName, double itemPrice) {
+    private JPanel createProductCard(String itemName, double itemPrice, String itemImage) {
         JPanel card = new JPanel();
         card.setLayout(new BorderLayout(0, 0));
         card.setBackground(CARD_COLOR);
@@ -419,23 +431,24 @@ public class PersonalCarePage extends JFrame {
         JPanel imagePanel = new JPanel(new BorderLayout());
         imagePanel.setBackground(CARD_COLOR);
         imagePanel.setPreferredSize(new Dimension(150, 150));
-        
-        JLabel imageLabel = new JLabel();
+          JLabel imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
-        JPanel placeholder = new JPanel(new BorderLayout());
-        placeholder.setPreferredSize(new Dimension(120, 120));
-        placeholder.setBackground(new Color(240, 240, 240));
-        placeholder.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        
-        JLabel placeholderText = new JLabel(itemName.substring(0, 1).toUpperCase());
-        placeholderText.setFont(new Font("SansSerif", Font.BOLD, 48));
-        placeholderText.setForeground(new Color(150, 150, 150));
-        placeholderText.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        placeholder.add(placeholderText, BorderLayout.CENTER);
-        imageLabel.setLayout(new BorderLayout());
-        imageLabel.add(placeholder, BorderLayout.CENTER);
+        if (itemImage != null && !itemImage.isEmpty()) {
+            ImageIcon icon = loadImage(itemImage);
+            if (icon != null) {
+                // Resize the image to fit nicely in the product card
+                Image img = icon.getImage();
+                Image resizedImg = img.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+                imageLabel.setIcon(new ImageIcon(resizedImg));
+            } else {
+                // If image loading fails, create a placeholder
+                createPlaceholderImage(imageLabel, itemName);
+            }
+        } else {
+            // If no image is specified, create a placeholder
+            createPlaceholderImage(imageLabel, itemName);
+        }
         
         imagePanel.add(imageLabel, BorderLayout.CENTER);
         
@@ -491,13 +504,16 @@ public class PersonalCarePage extends JFrame {
             CartManager.removeItem(itemName);
             updateProductCard(card, itemName, itemPrice);
             updateCartCount();
+            // Update all cart counters after any cart change
+            if (parent != null) parent.updateAllCartCounters();
         });
-        
+
         incrementBtn.addActionListener(e -> {
             CartManager.addItem(itemName, itemPrice);
             updateProductCard(card, itemName, itemPrice);
             updateCartCount();
-            
+            // Update all cart counters after any cart change
+            if (parent != null) parent.updateAllCartCounters();
             showAddToCartFeedback(itemName);
         });
         
@@ -515,7 +531,7 @@ public class PersonalCarePage extends JFrame {
     }
     
     private void showAddToCartFeedback(String itemName) {
-        JWindow notification = new JWindow(this);
+        JWindow notification = new JWindow(SwingUtilities.getWindowAncestor(this));
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(new Color(50, 50, 50, 220));
         content.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
@@ -537,28 +553,51 @@ public class PersonalCarePage extends JFrame {
         notification.setVisible(true);
         
         new javax.swing.Timer(1500, e -> notification.dispose()).start();
-    }
-
-    private void updateProductCard(JPanel card, String itemName, double itemPrice) {
+    }    private void updateProductCard(JPanel card, String itemName, double itemPrice) {
         Container parent = card.getParent();
         int index = -1;
-        
         for (int i = 0; i < parent.getComponentCount(); i++) {
             if (parent.getComponent(i) == card) {
                 index = i;
                 break;
             }
         }
-        
         if (index >= 0) {
             parent.remove(card);
-            parent.add(createProductCard(itemName, itemPrice), index);
+            
+            // Find the image filename for this product
+            String imageFileName = null;
+            for (String category : products.keySet()) {
+                List<String> items = products.get(category);
+                int itemIndex = items.indexOf(itemName);
+                if (itemIndex >= 0) {
+                    List<String> itemImages = images.get(category);
+                    if (itemImages != null && itemIndex < itemImages.size()) {
+                        imageFileName = itemImages.get(itemIndex);
+                    }
+                    break;
+                }
+            }
+            
+            parent.add(createProductCard(itemName, itemPrice, imageFileName), index);
             parent.revalidate();
             parent.repaint();
         }
+        // After updating, also update all cart counters
+        if (parent != null && this.parent != null) {
+            this.parent.updateAllCartCounters();
+        }
     }
-        
-    private void updateCartCount() {
+
+    @Override
+    public void backToMain() {
+        if (parent != null) {
+            parent.showMainPage();
+        }
+    }
+
+    @Override
+    public void updateCartCount() {
         int count = CartManager.getTotalItems();
         cartCountLabel.setText(String.valueOf(count));
         cartCountLabel.setVisible(count > 0);
@@ -575,7 +614,7 @@ public class PersonalCarePage extends JFrame {
     }
 
     private void showHelpRequestDialog() {
-        JDialog helpDialog = new JDialog(this, "Request Assistance", true);
+        JDialog helpDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Request Assistance", true);
         helpDialog.setSize(450, 350);
         helpDialog.setLocationRelativeTo(this);
         helpDialog.setLayout(new BorderLayout());
@@ -693,7 +732,50 @@ public class PersonalCarePage extends JFrame {
         helpDialog.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new PersonalCarePage(true));
+    private ImageIcon loadImage(String imageName) {
+        URL imageUrl = getClass().getClassLoader().getResource("kiosk/resources/" + imageName);
+        if (imageUrl != null) {
+            return new ImageIcon(imageUrl);
+        } else {
+            // Try with lowercase filename as a fallback
+            imageUrl = getClass().getClassLoader().getResource("kiosk/resources/" + imageName.toLowerCase());
+            if (imageUrl != null) {
+                return new ImageIcon(imageUrl);
+            }
+
+            // Try without the file extension
+            int dotIndex = imageName.lastIndexOf('.');
+            if (dotIndex > 0) {
+                String nameWithoutExtension = imageName.substring(0, dotIndex);
+                String[] extensions = {".jpg", ".png", ".gif"};
+                for (String extension : extensions) {
+                    imageUrl = getClass().getClassLoader().getResource("kiosk/resources/" + nameWithoutExtension + extension);
+                    if (imageUrl != null) {
+                        return new ImageIcon(imageUrl);
+                    }
+                }
+            }
+            
+            System.out.println("Image not found: " + imageName);
+            return null;
+        }
     }
+
+    private void createPlaceholderImage(JLabel imageLabel, String itemName) {
+        JPanel placeholder = new JPanel(new BorderLayout());
+        placeholder.setPreferredSize(new Dimension(120, 120));
+        placeholder.setBackground(new Color(240, 240, 240));
+        placeholder.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        
+        JLabel placeholderText = new JLabel(itemName.substring(0, 1).toUpperCase());
+        placeholderText.setFont(new Font("SansSerif", Font.BOLD, 48));
+        placeholderText.setForeground(new Color(150, 150, 150));
+        placeholderText.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        placeholder.add(placeholderText, BorderLayout.CENTER);
+        imageLabel.setLayout(new BorderLayout());
+        imageLabel.add(placeholder, BorderLayout.CENTER);
+    }
+
 }
+

@@ -1,16 +1,24 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.URL;
-import java.util.*;
-import java.util.List; // Explicit import for java.util.List
 import java.text.DecimalFormat;
+import java.util.*;
+import java.util.List;
+import javax.swing.*; // Explicit import for java.util.List
+import javax.swing.border.*;
 
-public class FoodsAndBeveragesPage extends JFrame {
+public class FoodsAndBeveragesPage extends JPanel implements KioskPage {
+    private KioskMainPage parent;
     private JPanel productPanel;
+
+    @Override
+    public void backToMain() {
+        if (parent != null) {
+            parent.showMainPage();
+        }
+    }
     private Map<String, java.util.List<String>> products;
     private Map<String, java.util.List<Double>> prices;
     private JButton snacksButton, readyMealsButton, beveragesButton, frozenFoodsButton;
@@ -32,17 +40,10 @@ public class FoodsAndBeveragesPage extends JFrame {
     private final Font REGULAR_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
 
-    public FoodsAndBeveragesPage() {
-        this(true);
-    }
-    
-    public FoodsAndBeveragesPage(boolean showImmediately) {
-        setTitle("Foods & Beverages");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 800);
-        setLocationRelativeTo(null);
+    public FoodsAndBeveragesPage(KioskMainPage parent) {
+        this.parent = parent;
         setLayout(new BorderLayout(0, 0));
-        getContentPane().setBackground(BACKGROUND_COLOR);
+        setBackground(BACKGROUND_COLOR);
 
         initProducts();
 
@@ -70,10 +71,6 @@ public class FoodsAndBeveragesPage extends JFrame {
         // Initial display
         showProducts("Snacks");
         highlightButton(snacksButton);
-        
-        if (showImmediately) {
-            setVisible(true);
-        }
     }
 
     private void initProducts() {
@@ -136,8 +133,9 @@ public class FoodsAndBeveragesPage extends JFrame {
         menuButton.setFont(new Font("SansSerif", Font.BOLD, 24));  // Increased font size
         menuButton.setPreferredSize(new Dimension(45, 40));  // Set specific button size
         menuButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
         
         searchBar = new JTextField(25);
@@ -204,8 +202,9 @@ public class FoodsAndBeveragesPage extends JFrame {
         JButton backButton = createIconButton("←", "Back");
         backButton.setToolTipText("Return to main menu");
         backButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
         
         JPanel cartPanel = new JPanel(new BorderLayout(5, 0));
@@ -228,8 +227,9 @@ public class FoodsAndBeveragesPage extends JFrame {
         cartPanel.add(cartCountLabel, BorderLayout.EAST);
         
         cartButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new CartPage();  // Open the cart page directly
+            if (parent != null) {
+                parent.showCartPage();
+            }
         });
         
         rightPanel.add(helpButton);
@@ -262,10 +262,10 @@ public class FoodsAndBeveragesPage extends JFrame {
         subcategoryPanel.setOpaque(false);
         subcategoryPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         
-        snacksButton = createCategoryButton("Snacks", "🍪");
-        readyMealsButton = createCategoryButton("Ready to Eat Meals", "🍱");
-        beveragesButton = createCategoryButton("Beverages", "🥤");
-        frozenFoodsButton = createCategoryButton("Frozen Foods", "🍦");
+        snacksButton = createCategoryButton("Snacks");
+        readyMealsButton = createCategoryButton("Ready to Eat Meals");
+        beveragesButton = createCategoryButton("Beverages");
+        frozenFoodsButton = createCategoryButton("Frozen Foods");
         
         subcategoryPanel.add(snacksButton);
         subcategoryPanel.add(readyMealsButton);
@@ -302,8 +302,8 @@ public class FoodsAndBeveragesPage extends JFrame {
         return button;
     }
     
-    private JButton createCategoryButton(String text, String icon) {
-        JButton button = new JButton(icon + " " + text);
+    private JButton createCategoryButton(String text) {
+        JButton button = new JButton(text);
         button.setForeground(TEXT_DARK);
         button.setBackground(CARD_COLOR);
         button.setFont(SUBTITLE_FONT);
@@ -522,14 +522,16 @@ public class FoodsAndBeveragesPage extends JFrame {
             CartManager.removeItem(itemName);
             updateProductCard(card, itemName, itemPrice);
             updateCartCount();
+            // Update all cart counters after any cart change
+            if (parent != null) parent.updateAllCartCounters();
         });
         
         incrementBtn.addActionListener(e -> {
             CartManager.addItem(itemName, itemPrice);
             updateProductCard(card, itemName, itemPrice);
             updateCartCount();
-            
-            // Show a mini notification when item is added
+            // Update all cart counters after any cart change
+            if (parent != null) parent.updateAllCartCounters();
             showAddToCartFeedback(itemName);
         });
         
@@ -551,7 +553,7 @@ public class FoodsAndBeveragesPage extends JFrame {
      * Shows a non-modal, auto-disappearing notification when an item is added to cart
      */
     private void showAddToCartFeedback(String itemName) {
-        JWindow notification = new JWindow(this);
+        JWindow notification = new JWindow();
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(new Color(50, 50, 50, 220));
         content.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
@@ -580,23 +582,26 @@ public class FoodsAndBeveragesPage extends JFrame {
     private void updateProductCard(JPanel card, String itemName, double itemPrice) {
         Container parent = card.getParent();
         int index = -1;
-        
         for (int i = 0; i < parent.getComponentCount(); i++) {
             if (parent.getComponent(i) == card) {
                 index = i;
                 break;
             }
         }
-        
         if (index >= 0) {
             parent.remove(card);
             parent.add(createProductCard(itemName, itemPrice), index);
             parent.revalidate();
             parent.repaint();
         }
+        // After updating, also update all cart counters
+        if (parent instanceof FoodsAndBeveragesPage && this.parent != null) {
+            this.parent.updateAllCartCounters();
+        }
     }
-    
-    private void updateCartCount() {
+
+    @Override
+    public void updateCartCount() {
         int count = CartManager.getTotalItems();
         cartCountLabel.setText(String.valueOf(count));
         cartCountLabel.setVisible(count > 0);
@@ -642,7 +647,7 @@ public class FoodsAndBeveragesPage extends JFrame {
      * Shows a dialog for the customer to request assistance
      */
     private void showHelpRequestDialog() {
-        JDialog helpDialog = new JDialog(this, "Request Assistance", true);
+        JDialog helpDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Request Assistance", Dialog.ModalityType.APPLICATION_MODAL);
         helpDialog.setSize(450, 350);
         helpDialog.setLocationRelativeTo(this);
         helpDialog.setLayout(new BorderLayout());
@@ -770,9 +775,5 @@ public class FoodsAndBeveragesPage extends JFrame {
         helpDialog.add(contentPanel, BorderLayout.CENTER);
         helpDialog.add(buttonPanel, BorderLayout.SOUTH);
         helpDialog.setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(FoodsAndBeveragesPage::new);
     }
 }

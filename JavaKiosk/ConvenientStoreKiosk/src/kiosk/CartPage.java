@@ -1,71 +1,65 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.text.DecimalFormat;
+import java.util.Random;
+import javax.swing.*;
+import javax.swing.border.*;
+import java.awt.image.BufferedImage;
 
-public class CartPage extends JFrame {
+public class CartPage extends JPanel implements KioskPage {
     private final Map<String, String> imageFileMap = new HashMap<>();
     private final Color PRIMARY_COLOR = new Color(41, 128, 185); // Deeper blue
     private final Color ACCENT_COLOR = new Color(245, 247, 250); // Light background
-    private final Color TEXT_COLOR = new Color(24, 24, 24);  // Deep black
+    private final Color TEXT_COLOR = new Color(24, 24, 24); // Deep black
     private final Color BUTTON_COLOR = new Color(46, 204, 113); // Green for checkout
     private final Color REMOVE_COLOR = new Color(231, 76, 60); // Red for remove
     private final Font HEADER_FONT = new Font("Segoe UI", Font.BOLD, 28);
     private final Font REGULAR_FONT = new Font("Segoe UI", Font.PLAIN, 16);
     private final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 18);
     private final Border ROUNDED_BORDER = new LineBorder(Color.LIGHT_GRAY, 2, true);
-    
+
     private JLabel totalLabel;
     private JPanel itemsPanel;
+    private JPanel summaryPanel;
     private JButton discountBtn;
     private boolean isDiscountApplied = false;
     private JDialog verificationDialog; // Dialog for ID verification
+    private KioskMainPage parent;
+    private JLabel cartCountLabel;
 
-    public CartPage() {
-        this(true);
-    }
-    
-    public CartPage(boolean showImmediately) {
-        setTitle("Shopping Cart");
-        setSize(800, 800); // Larger size for kiosk display
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new BorderLayout(15, 15)); // More spacing
-        getContentPane().setBackground(ACCENT_COLOR);
-        
+    public CartPage(KioskMainPage parent) {
+        this.parent = parent;
+        setLayout(new BorderLayout(15, 15));
+        setBackground(ACCENT_COLOR);
+
         // Initialize image mapping
         initializeImageMap();
-        
+
         // Header Panel
         JPanel headerPanel = createHeaderPanel();
         add(headerPanel, BorderLayout.NORTH);
-        
+
         // Create the scrollable items panel
         JScrollPane scrollPane = createItemsScrollPane();
         add(scrollPane, BorderLayout.CENTER);
-        
+
         // Create summary panel
         JPanel summaryPanel = createSummaryPanel();
         add(summaryPanel, BorderLayout.SOUTH);
-        
+
         // Update the initial state
         updateCartSummary();
-        
+
         // Check if cart is empty and show message if needed
         if (CartManager.isCartEmpty()) {
             showEmptyCartMessage();
         }
-        
-        if (showImmediately) {
-            setVisible(true);
-        }
     }
-    
+
     private void initializeImageMap() {
         // Add all image mappings
         imageFileMap.put("Chippy", "chippy.jpg");
@@ -73,12 +67,12 @@ public class CartPage extends JFrame {
         imageFileMap.put("Chips Delight", "chipsdelight.jpg");
         imageFileMap.put("Choco Mallows", "chocomallows.jpg");
         imageFileMap.put("Cupp Keyk Topps Sarap", "cuppkeyktoppssarap.jpg");
-        imageFileMap.put("Doowee Donut Chocolate", "dooweedonutchocolate.jpg");
+        imageFileMap.put("Doowee Donut Chocolate", "doowee.jpg");
         imageFileMap.put("Foods", "foods.png");
         imageFileMap.put("Fudgee Barr", "fudgeebarr.jpg");
         imageFileMap.put("Nova", "nova.jpg");
         imageFileMap.put("Piattos", "piattos.jpg");
-        imageFileMap.put("Rebisco Choco Crackers", "rebiscochococrackers.jpg");
+        imageFileMap.put("Rebisco Choco Crackers", "rebiscochoco.jpg");
         imageFileMap.put("Roller Coaster", "rollercoaster.jpg");
         imageFileMap.put("Tortillos", "tortillos.jpg");
         imageFileMap.put("Alcohol", "alcohol.png");
@@ -86,22 +80,33 @@ public class CartPage extends JFrame {
         imageFileMap.put("Personal Care", "personal_care.png");
         imageFileMap.put("V-Cut", "vcut.jpg");
         imageFileMap.put("Cream-O", "creamo.jpg");
-        imageFileMap.put("Stik-O Chocolate", "stikochocolate.jpg");
+        imageFileMap.put("Stik-O", "stiko.jpg");
+        imageFileMap.put("Cheeseburger", "cheeseburger.png");
+        imageFileMap.put("Hotdog", "hotdogsandwich.png");
+        imageFileMap.put("Siopao", "siopao.png");
+        imageFileMap.put("Sisig with Rice", "sisig.jpg");
+        imageFileMap.put("Bavarian Filled Donut", "bavarian.jpg");
+        imageFileMap.put("BurgerSteak with Rice", "burgersteak.jpg");
+        imageFileMap.put("Chocolate Donut", "chocolatedonut.png");
+        imageFileMap.put("Cup Noodles Very Veggie", "cupnoodles.png");
+        imageFileMap.put("Fried Chicken with Rice", "friedchicken.png");
+        imageFileMap.put("Pancit Canton", "pancitcanton.png");
     }
-    
+
     private JPanel createHeaderPanel() {
         JPanel headerPanel = new JPanel(new BorderLayout());
+        cartCountLabel = new JLabel("0");
         headerPanel.setBackground(PRIMARY_COLOR);
         headerPanel.setPreferredSize(new Dimension(0, 80));
         headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 25, 15, 25));
-        
+
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         titlePanel.setOpaque(false);
-        
+
         JLabel titleLabel = new JLabel("Your Shopping Cart");
         titleLabel.setFont(HEADER_FONT);
         titleLabel.setForeground(Color.WHITE);
-        
+
         JButton helpButton = new JButton("❓");
         helpButton.setToolTipText("Ask for assistance");
         helpButton.setFont(new Font("SansSerif", Font.BOLD, 20));
@@ -111,64 +116,82 @@ public class CartPage extends JFrame {
         helpButton.setContentAreaFilled(false);
         helpButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         helpButton.addActionListener(e -> showHelpRequestDialog());
-        
+
         titlePanel.add(titleLabel);
         titlePanel.add(helpButton);
-        
+
         JButton backBtn = createStyledButton("← Continue Shopping");
         backBtn.setFont(BUTTON_FONT);
         backBtn.setPreferredSize(new Dimension(250, 50));
         backBtn.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+                setVisible(false);
+            }
         });
-        
+
         headerPanel.add(titlePanel, BorderLayout.WEST);
         headerPanel.add(backBtn, BorderLayout.EAST);
-        
+
         return headerPanel;
     }
-    
+
     private JScrollPane createItemsScrollPane() {
         itemsPanel = new JPanel();
         itemsPanel.setLayout(new BoxLayout(itemsPanel, BoxLayout.Y_AXIS));
         itemsPanel.setBackground(Color.WHITE);
         itemsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
+
         populateCartItems();
-        
+
         JScrollPane scrollPane = new JScrollPane(itemsPanel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        
+
         return scrollPane;
     }
-    
+
+    public void clearCart() {
+        // Clear the cart data
+        CartManager.clearCart();
+
+        // Update the UI
+        itemsPanel.removeAll();
+        showEmptyCartMessage();
+        isDiscountApplied = false;
+        itemsPanel.revalidate();
+        itemsPanel.repaint();
+
+        // Update summary and cart count
+        updateCartSummary();
+        updateCartCount();
+    }
+
     private void populateCartItems() {
         Map<String, Integer> cartItems = CartManager.getCartItems();
         Map<String, Double> cartPrices = CartManager.getCartPrices();
-        
+
         if (cartItems.isEmpty()) {
             return;
         }
-        
+
         for (String item : cartItems.keySet()) {
             JPanel itemCard = createItemCard(item, cartItems.get(item), cartPrices.get(item));
             itemsPanel.add(itemCard);
-            
+
             // Add a small gap between items
             itemsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         }
     }
-    
+
     private JPanel createItemCard(String itemName, int quantity, double price) {
         JPanel card = new JPanel(new BorderLayout(20, 10)); // More spacing
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
-            ROUNDED_BORDER,
-            BorderFactory.createEmptyBorder(15, 15, 15, 15) // More padding
+                ROUNDED_BORDER,
+                BorderFactory.createEmptyBorder(15, 15, 15, 15) // More padding
         ));
-        
+
         // Left: Image (larger)
         JLabel imageLabel = new JLabel();
         imageLabel.setPreferredSize(new Dimension(100, 100)); // Larger image
@@ -188,63 +211,83 @@ public class CartPage extends JFrame {
             imageLabel.setText("No Image");
             imageLabel.setHorizontalTextPosition(SwingConstants.CENTER);
         }
-        
+
         // Center: Item details with larger fonts
         JPanel detailsPanel = new JPanel(new GridLayout(3, 1, 0, 5));
         detailsPanel.setBackground(Color.WHITE);
-        
+
         JLabel nameLabel = new JLabel(itemName);
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 18)); // Larger font
         nameLabel.setForeground(TEXT_COLOR);
-        
+
         JLabel priceLabel = new JLabel("₱" + new DecimalFormat("0.00").format(price));
         priceLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Larger font
         priceLabel.setForeground(new Color(100, 100, 100));
-        
+
         JLabel subtotalLabel = new JLabel("Subtotal: ₱" + new DecimalFormat("0.00").format(price * quantity));
         subtotalLabel.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Larger font
         subtotalLabel.setForeground(new Color(50, 50, 50));
-        
+
         detailsPanel.add(nameLabel);
         detailsPanel.add(priceLabel);
         detailsPanel.add(subtotalLabel);
-        
+
         // Right: Quantity controls (larger for touch)
         JPanel controlsPanel = new JPanel();
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.Y_AXIS));
         controlsPanel.setBackground(Color.WHITE);
-        
+
         JPanel quantityPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         quantityPanel.setBackground(Color.WHITE);
-        
+
         JButton decrementBtn = createQuantityButton("-");
         decrementBtn.setPreferredSize(new Dimension(50, 40)); // Larger button for touch
         decrementBtn.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Larger font
-        
+
         JLabel quantityLabel = new JLabel(String.valueOf(quantity));
         quantityLabel.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Larger font
         quantityLabel.setHorizontalAlignment(SwingConstants.CENTER);
         quantityLabel.setPreferredSize(new Dimension(50, 40)); // Larger area
         quantityLabel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        
+
         JButton incrementBtn = createQuantityButton("+");
         incrementBtn.setPreferredSize(new Dimension(50, 40)); // Larger button for touch
         incrementBtn.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Larger font
-        
+
         decrementBtn.addActionListener(e -> {
             CartManager.removeItem(itemName);
-            updateCartPage();
+            int newQty = CartManager.getItemQuantity(itemName);
+            quantityLabel.setText(String.valueOf(newQty));
+            decrementBtn.setEnabled(newQty > 0);
+            updateProductCard(card, itemName, price);
+            updateCartSummary();
+
+            // If quantity reaches 0, remove the card
+            if (newQty == 0) {
+                itemsPanel.remove(card);
+                itemsPanel.revalidate();
+                itemsPanel.repaint();
+
+                // Show empty cart message if no items left
+                if (CartManager.isCartEmpty()) {
+                    showEmptyCartMessage();
+                }
+            }
         });
-        
+
         incrementBtn.addActionListener(e -> {
             CartManager.addItem(itemName, price);
-            updateCartPage();
+            int newQty = CartManager.getItemQuantity(itemName);
+            quantityLabel.setText(String.valueOf(newQty));
+            decrementBtn.setEnabled(true);
+            updateProductCard(card, itemName, price);
+            updateCartSummary();
         });
-        
+
         quantityPanel.add(decrementBtn);
         quantityPanel.add(quantityLabel);
         quantityPanel.add(incrementBtn);
-        
+
         JButton removeBtn = new JButton("Remove Item");
         removeBtn.setFont(new Font("Segoe UI", Font.BOLD, 14)); // Larger, bolder font
         removeBtn.setForeground(Color.WHITE);
@@ -257,132 +300,132 @@ public class CartPage extends JFrame {
             for (int i = 0; i < quantity; i++) {
                 CartManager.removeItem(itemName);
             }
-            updateCartPage();
+            itemsPanel.remove(card);
+            itemsPanel.revalidate();
+            itemsPanel.repaint();
+            updateCartSummary();
+            updateCartCount();
+            if (CartManager.isCartEmpty()) {
+                showEmptyCartMessage();
+            }
         });
-        
+
         controlsPanel.add(quantityPanel);
         controlsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         controlsPanel.add(removeBtn);
-        
+
         card.add(imageLabel, BorderLayout.WEST);
         card.add(detailsPanel, BorderLayout.CENTER);
         card.add(controlsPanel, BorderLayout.EAST);
-        
+
         return card;
     }
-    
+
     private JButton createQuantityButton(String text) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 18)); // Larger font
+        button.setFont(new Font("Segoe UI", Font.BOLD, 18));
         button.setFocusPainted(false);
         button.setBackground(ACCENT_COLOR);
-        button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2)); // More visible border
+        button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
-    
+
     private JPanel createSummaryPanel() {
-        JPanel summaryPanel = new JPanel();
+        summaryPanel = new JPanel();
         summaryPanel.setLayout(new BoxLayout(summaryPanel, BoxLayout.Y_AXIS));
         summaryPanel.setBorder(BorderFactory.createCompoundBorder(
-            new MatteBorder(2, 0, 0, 0, Color.LIGHT_GRAY), // Thicker border
-            BorderFactory.createEmptyBorder(20, 30, 20, 30) // More padding
-        ));
+                new MatteBorder(2, 0, 0, 0, Color.LIGHT_GRAY),
+                BorderFactory.createEmptyBorder(20, 30, 20, 30)));
         summaryPanel.setBackground(Color.WHITE);
-        
-        // Order summary section with larger text
+
         JPanel summaryHeaderPanel = new JPanel(new BorderLayout());
         summaryHeaderPanel.setBackground(Color.WHITE);
-        
+
         JLabel summaryHeaderLabel = new JLabel("Order Summary");
-        summaryHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 22)); // Larger font
+        summaryHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         summaryHeaderPanel.add(summaryHeaderLabel, BorderLayout.WEST);
-        
-        // Discount button
+
         discountBtn = createStyledButton("Apply 20% Discount (PWD/Senior)");
-        discountBtn.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Larger font
-        discountBtn.setPreferredSize(new Dimension(0, 50)); // Taller button
+        discountBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        discountBtn.setPreferredSize(new Dimension(0, 50));
         discountBtn.setBackground(new Color(39, 174, 96));
         discountBtn.addActionListener(e -> {
             if (isDiscountApplied) {
-                // If discount is already applied, just remove it
                 isDiscountApplied = false;
                 CartManager.applyDiscount(false);
                 updateCartSummary();
                 discountBtn.setText("Apply 20% Discount (PWD/Senior)");
                 discountBtn.setBackground(new Color(39, 174, 96));
             } else {
-                // If discount is not applied, show verification dialog
                 showIdVerificationDialog();
             }
         });
-        
-        // Cost breakdown with larger fonts
-        JPanel costBreakdownPanel = new JPanel(new GridLayout(3, 2, 5, 15)); // More vertical spacing
+
+        // Add labels for subtotal, discount, and total
+        JPanel costBreakdownPanel = new JPanel(new GridBagLayout());
         costBreakdownPanel.setBackground(Color.WHITE);
-        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 15, 0);
+        gbc.gridx = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
+        // Subtotal
+        JPanel subtotalPanel = new JPanel(new BorderLayout());
+        subtotalPanel.setBackground(Color.WHITE);
         JLabel subtotalTextLabel = new JLabel("Subtotal:");
-        subtotalTextLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18)); // Larger font
-        JLabel subtotalValueLabel = new JLabel("₱0.00", JLabel.RIGHT);
-        subtotalValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18)); // Larger font
-        
+        subtotalTextLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        JLabel subtotalValueLabel = new JLabel("₱0.00");
+        subtotalValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        subtotalValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        subtotalPanel.add(subtotalTextLabel, BorderLayout.WEST);
+        subtotalPanel.add(subtotalValueLabel, BorderLayout.EAST);
+        gbc.gridy = 0;
+        costBreakdownPanel.add(subtotalPanel, gbc);
+
+        // Discount
+        JPanel discountPanel = new JPanel(new BorderLayout());
+        discountPanel.setBackground(Color.WHITE);
         JLabel discountTextLabel = new JLabel("Discount:");
-        discountTextLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18)); // Larger font
-        JLabel discountValueLabel = new JLabel("₱0.00", JLabel.RIGHT);
-        discountValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18)); // Larger font
-        
+        discountTextLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        JLabel discountValueLabel = new JLabel("₱0.00");
+        discountValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        discountValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        discountPanel.add(discountTextLabel, BorderLayout.WEST);
+        discountPanel.add(discountValueLabel, BorderLayout.EAST);
+        gbc.gridy = 1;
+        costBreakdownPanel.add(discountPanel, gbc);
+
+        // Total
+        JPanel totalPanel = new JPanel(new BorderLayout());
+        totalPanel.setBackground(Color.WHITE);
         JLabel totalTextLabel = new JLabel("Total:");
-        totalTextLabel.setFont(new Font("Segoe UI", Font.BOLD, 22)); // Larger font
-        totalLabel = new JLabel("₱0.00", JLabel.RIGHT);
-        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 22)); // Larger font
-        
-        costBreakdownPanel.add(subtotalTextLabel);
-        costBreakdownPanel.add(subtotalValueLabel);
-        costBreakdownPanel.add(discountTextLabel);
-        costBreakdownPanel.add(discountValueLabel);
-        costBreakdownPanel.add(totalTextLabel);
-        costBreakdownPanel.add(totalLabel);
-        
+        totalTextLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        totalLabel = new JLabel("₱0.00");
+        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        totalLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        totalPanel.add(totalTextLabel, BorderLayout.WEST);
+        totalPanel.add(totalLabel, BorderLayout.EAST);
+        gbc.gridy = 2;
+        costBreakdownPanel.add(totalPanel, gbc);
+
         // Update values based on cart
         DecimalFormat df = new DecimalFormat("0.00");
         double subtotal = CartManager.getTotalPrice();
         subtotalValueLabel.setText("₱" + df.format(subtotal));
-        
         double discount = CartManager.getDiscountAmount();
         discountValueLabel.setText("₱" + df.format(discount));
-        
         double total = CartManager.getTotal();
         totalLabel.setText("₱" + df.format(total));
-        
-        // Checkout button - larger for kiosk
+
         JButton checkoutBtn = createStyledButton("PROCEED TO CHECKOUT");
         checkoutBtn.setBackground(BUTTON_COLOR);
-        checkoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Larger font
-        checkoutBtn.setPreferredSize(new Dimension(0, 70)); // Much taller button for touch
-        checkoutBtn.addActionListener(e -> {
-            if (CartManager.isCartEmpty()) {
-                JOptionPane.showMessageDialog(this, 
-                    "Your cart is empty. Please add items before checkout.", 
-                    "Empty Cart", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            
-            JTextArea receiptArea = new JTextArea(CartManager.getFormattedReceipt());
-            receiptArea.setEditable(false);
-            receiptArea.setFont(new Font("Monospaced", Font.PLAIN, 16)); // Larger font
-            
-            JScrollPane receiptScrollPane = new JScrollPane(receiptArea);
-            receiptScrollPane.setPreferredSize(new Dimension(500, 400)); // Larger receipt
-            
-            JOptionPane.showMessageDialog(this, receiptScrollPane, 
-                "Purchase Completed", JOptionPane.INFORMATION_MESSAGE);
-            
-            CartManager.clearCart();
-            dispose();  // Close this window
-            new KioskMainPage();  // Return to the main page
-        });
-        
-        // Put it all together
+        checkoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        checkoutBtn.setPreferredSize(new Dimension(0, 70));
+        checkoutBtn.addActionListener(e -> handleCheckout());
+
         summaryPanel.add(summaryHeaderPanel);
         summaryPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         summaryPanel.add(costBreakdownPanel);
@@ -390,10 +433,15 @@ public class CartPage extends JFrame {
         summaryPanel.add(discountBtn);
         summaryPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         summaryPanel.add(checkoutBtn);
-        
+
+        // Store references for updateCartSummary
+        summaryPanel.putClientProperty("subtotalValueLabel", subtotalValueLabel);
+        summaryPanel.putClientProperty("discountValueLabel", discountValueLabel);
+        summaryPanel.putClientProperty("totalLabel", totalLabel);
+
         return summaryPanel;
     }
-    
+
     private JButton createStyledButton(String text) {
         JButton button = new JButton(text);
         button.setFont(BUTTON_FONT);
@@ -404,197 +452,472 @@ public class CartPage extends JFrame {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
-    
+
+    private void updateProductCard(JPanel card, String itemName, double itemPrice) {
+        Container parent = card.getParent();
+        int index = -1;
+
+        for (int i = 0; i < parent.getComponentCount(); i++) {
+            if (parent.getComponent(i) == card) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index >= 0) {
+            parent.remove(card);
+            parent.add(createItemCard(itemName, CartManager.getItemQuantity(itemName), itemPrice), index);
+            parent.revalidate();
+            parent.repaint();
+
+            // Update the summary after card update
+            updateCartSummary();
+            updateCartCount();
+        }
+    }
+
+    private void removeItem(String itemName, int quantity, JPanel card) {
+        for (int i = 0; i < quantity; i++) {
+            CartManager.removeItem(itemName);
+        }
+
+        itemsPanel.remove(card);
+        itemsPanel.revalidate();
+        itemsPanel.repaint();
+
+        // Update UI after removal
+        updateCartSummary();
+        updateCartCount();
+
+        // Show empty cart message if no items left
+        if (CartManager.isCartEmpty()) {
+            showEmptyCartMessage();
+        }
+    }
+
     private void updateCartSummary() {
         DecimalFormat df = new DecimalFormat("0.00");
+        double subtotal = CartManager.getTotalPrice();
+        double discount = CartManager.getDiscountAmount();
         double total = CartManager.getTotal();
-        totalLabel.setText("₱" + df.format(total));
-        
-        // Update the discount button state based on cart manager
-        isDiscountApplied = CartManager.isDiscountApplied();
+
+        JLabel subtotalValueLabel = (JLabel) summaryPanel.getClientProperty("subtotalValueLabel");
+        JLabel discountValueLabel = (JLabel) summaryPanel.getClientProperty("discountValueLabel");
+        JLabel totalLabelRef = (JLabel) summaryPanel.getClientProperty("totalLabel");
+
+        if (subtotalValueLabel != null)
+            subtotalValueLabel.setText("₱" + df.format(subtotal));
+        if (discountValueLabel != null)
+            discountValueLabel.setText("₱" + df.format(discount));
+        if (totalLabelRef != null)
+            totalLabelRef.setText("₱" + df.format(total));
+
+        // Update the discount button text
         if (isDiscountApplied) {
             discountBtn.setText("Remove Discount");
-            discountBtn.setBackground(new Color(231, 76, 60));
+            discountBtn.setBackground(REMOVE_COLOR);
         } else {
             discountBtn.setText("Apply 20% Discount (PWD/Senior)");
             discountBtn.setBackground(new Color(39, 174, 96));
         }
     }
-    
-    private void showIdVerificationDialog() {
-        verificationDialog = new JDialog(this, "ID Verification Required", true);
-        verificationDialog.setSize(500, 400);
-        verificationDialog.setLocationRelativeTo(this);
-        verificationDialog.setLayout(new BorderLayout());
+
+    private void handleCheckout() {
+        if (CartManager.isCartEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Your cart is empty. Please add items before checkout.",
+                    "Empty Cart",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        contentPanel.setBackground(ACCENT_COLOR);
+        // Show payment dialog before receipt
+        double total = CartManager.getTotal();
+        JPanel paymentPanel = new JPanel();
+        paymentPanel.setLayout(new BoxLayout(paymentPanel, BoxLayout.Y_AXIS));
+        paymentPanel.setBackground(Color.WHITE);
+        paymentPanel.setBorder(BorderFactory.createEmptyBorder(70, 100, 250, 100)); // Adds padding
         
-        // Header
-        JLabel headerLabel = new JLabel("Please Verify Your Eligibility");
-        headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        headerLabel.setForeground(PRIMARY_COLOR);
-        headerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Payment method selection
+        JLabel methodLabel = new JLabel("Select payment method:");
+        methodLabel.setFont(new Font("Segoe UI", Font.BOLD, 18)); // Increased font size
+        methodLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Instruction text
-        JLabel instructionLabel = new JLabel("Select ID type and enter the ID number");
-        instructionLabel.setFont(REGULAR_FONT);
-        instructionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10)); // Spacing between elements
+        radioPanel.setBackground(Color.WHITE);
+        radioPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // ID Type selection
-        JPanel idTypePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        idTypePanel.setBackground(ACCENT_COLOR);
-        idTypePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        JRadioButton cashButton = new JRadioButton("Cash");
+        cashButton.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        cashButton.setBackground(Color.WHITE);
+        cashButton.setSelected(true);
         
-        JLabel idTypeLabel = new JLabel("ID Type: ");
-        idTypeLabel.setFont(REGULAR_FONT);
+        JRadioButton ecashButton = new JRadioButton("E-Cash (QR Code)");
+        ecashButton.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        ecashButton.setBackground(Color.WHITE);
         
-        String[] idTypes = {"Senior Citizen ID", "PWD ID", "Other Valid ID"};
-        JComboBox<String> idTypeComboBox = new JComboBox<>(idTypes);
-        idTypeComboBox.setFont(REGULAR_FONT);
-        idTypeComboBox.setPreferredSize(new Dimension(200, 30));
+        ButtonGroup paymentGroup = new ButtonGroup();
+        paymentGroup.add(cashButton);
+        paymentGroup.add(ecashButton);
         
-        idTypePanel.add(idTypeLabel);
-        idTypePanel.add(idTypeComboBox);
+        radioPanel.add(cashButton);
+        radioPanel.add(ecashButton);
         
-        // ID Number input
-        JPanel idNumberPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        idNumberPanel.setBackground(ACCENT_COLOR);
-        idNumberPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        // Cash panel components
+        JPanel cashPanel = new JPanel();
+        cashPanel.setLayout(new BoxLayout(cashPanel, BoxLayout.Y_AXIS));
+        cashPanel.setBackground(Color.WHITE);
+        cashPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        JLabel idNumberLabel = new JLabel("ID Number: ");
-        idNumberLabel.setFont(REGULAR_FONT);
+        JLabel paymentLabel = new JLabel("Enter payment amount:");
+        paymentLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        paymentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        JTextField idNumberField = new JTextField(15);
-        idNumberField.setFont(REGULAR_FONT);
-        idNumberField.setPreferredSize(new Dimension(200, 30));
+        JTextField paymentField = new JTextField();
+        paymentField.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        paymentField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        paymentField.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        idNumberPanel.add(idNumberLabel);
-        idNumberPanel.add(idNumberField);
+        JLabel changeLabel = new JLabel("Change: ₱0.00");
+        changeLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        changeLabel.setForeground(new Color(39, 174, 96));
+        changeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Employee verification option
-        JPanel employeePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        employeePanel.setBackground(ACCENT_COLOR);
-        employeePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        cashPanel.add(paymentLabel);
+        cashPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        cashPanel.add(paymentField);
+        cashPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        cashPanel.add(changeLabel);
         
-        JCheckBox employeeVerifiedCheckbox = new JCheckBox("Employee verified ID in person");
-        employeeVerifiedCheckbox.setFont(REGULAR_FONT);
-        employeeVerifiedCheckbox.setBackground(ACCENT_COLOR);
+        // QR Code panel
+        JPanel qrPanel = new JPanel();
+        qrPanel.setLayout(new BoxLayout(qrPanel, BoxLayout.Y_AXIS));
+        qrPanel.setBackground(Color.WHITE);
+        qrPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        qrPanel.setVisible(false);
         
-        employeePanel.add(employeeVerifiedCheckbox);
+        JLabel qrInstructionLabel = new JLabel("Scan QR code with your mobile banking app:");
+        qrInstructionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        qrInstructionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // Error message label (initially hidden)
-        JLabel errorLabel = new JLabel("");
-        errorLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        errorLabel.setForeground(REMOVE_COLOR);
-        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        errorLabel.setVisible(false);
+        JLabel qrCodeLabel = new JLabel();
+        qrCodeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        qrCodeLabel.setPreferredSize(new Dimension(200, 200));
         
-        // Buttons panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        buttonPanel.setBackground(ACCENT_COLOR);
+        JLabel qrAmountLabel = new JLabel(String.format("Amount: ₱%.2f", total));
+        qrAmountLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        qrAmountLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.setFont(BUTTON_FONT);
-        cancelButton.setPreferredSize(new Dimension(120, 40));
-        cancelButton.addActionListener(e -> verificationDialog.dispose());
+        JButton completeQrPaymentButton = new JButton("I've Completed Payment");
+        completeQrPaymentButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        completeQrPaymentButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        completeQrPaymentButton.setBackground(new Color(39, 174, 96));
+        completeQrPaymentButton.setForeground(Color.WHITE);
+        completeQrPaymentButton.setMaximumSize(new Dimension(250, 40));
         
-        JButton verifyButton = new JButton("Verify & Apply");
-        verifyButton.setFont(BUTTON_FONT);
-        verifyButton.setPreferredSize(new Dimension(150, 40));
-        verifyButton.setBackground(PRIMARY_COLOR);
-        verifyButton.setForeground(Color.WHITE);
-        verifyButton.addActionListener(e -> {
-            String idType = (String) idTypeComboBox.getSelectedItem();
-            String idNumber = idNumberField.getText().trim();
-            boolean isEmployeeVerified = employeeVerifiedCheckbox.isSelected();
-            
-            // Basic validation
-            if (idNumber.isEmpty()) {
-                errorLabel.setText("Please enter an ID number");
-                errorLabel.setVisible(true);
-                return;
-            }
-            
-            if (!isEmployeeVerified) {
-                errorLabel.setText("Employee verification is required");
-                errorLabel.setVisible(true);
-                return;
-            }
-            
-            // Log the verification (in real system, would store this)
-            System.out.println("Discount applied with " + idType + " #" + idNumber);
-            
-            // Apply the discount
-            isDiscountApplied = true;
-            CartManager.applyDiscount(true);
-            updateCartSummary();
-            discountBtn.setText("Remove Discount");
-            discountBtn.setBackground(new Color(231, 76, 60));
-            
-            // Show confirmation
-            JOptionPane.showMessageDialog(verificationDialog,
-                "Discount successfully applied!",
-                "Verification Successful",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            verificationDialog.dispose();
+        qrPanel.add(qrInstructionLabel);
+        qrPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        qrPanel.add(qrCodeLabel);
+        qrPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        qrPanel.add(qrAmountLabel);
+        qrPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        qrPanel.add(completeQrPaymentButton);
+        
+        // Generate mock QR code
+        generateMockQrCode(qrCodeLabel, total);
+        
+        // Toggle between payment panels
+        cashButton.addActionListener(e -> {
+            cashPanel.setVisible(true);
+            qrPanel.setVisible(false);
+            paymentPanel.revalidate();
+            paymentPanel.repaint();
         });
         
-        // Add components
+        ecashButton.addActionListener(e -> {
+            cashPanel.setVisible(false);
+            qrPanel.setVisible(true);
+            paymentPanel.revalidate();
+            paymentPanel.repaint();
+        });
+        
+        // Add components to main panel
+        paymentPanel.add(methodLabel);
+        paymentPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        paymentPanel.add(radioPanel);
+        paymentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        paymentPanel.add(cashPanel);
+        paymentPanel.add(qrPanel);
+        
+        double[] paymentHolder = new double[1];
+        double[] changeHolder = new double[1];
+        boolean[] isEcashPayment = new boolean[1];
+
+        // Create a final reference to the dialog we'll create
+        final JDialog[] paymentDialog = new JDialog[1];
+        // Create a safer dialog initialization
+        try {
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            if (parentWindow instanceof Frame) {
+                paymentDialog[0] = new JDialog((Frame)parentWindow, "Payment", true);
+            } else if (parentWindow instanceof Dialog) {
+                paymentDialog[0] = new JDialog((Dialog)parentWindow, "Payment", true);
+            } else {
+                // If we can't find a proper parent, create a non-modal dialog
+                paymentDialog[0] = new JDialog();
+                paymentDialog[0].setTitle("Payment");
+            }
+        } catch (Exception ex) {
+            // Fallback for any unexpected errors
+            paymentDialog[0] = new JDialog();
+            paymentDialog[0].setTitle("Payment");
+        }
+        
+        paymentDialog[0].setContentPane(paymentPanel);
+        paymentDialog[0].setSize(700, 900);
+        paymentDialog[0].setLocationRelativeTo(null); // Center on screen instead of relative to component
+        
+        // Separate handling for QR code payment
+        completeQrPaymentButton.addActionListener(e -> {
+            isEcashPayment[0] = true;
+            paymentHolder[0] = total;
+            changeHolder[0] = 0.0;
+            paymentDialog[0].dispose(); // Close the dialog when QR payment completes
+        });
+
+        // Add buttons for cash payment
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton confirmButton = new JButton("Confirm");
+        JButton cancelButton = new JButton("Cancel");
+        
+        confirmButton.addActionListener(e -> {
+            if (cashButton.isSelected()) {
+                // Validate cash payment
+                String input = paymentField.getText().trim();
+                try {
+                    double payment = Double.parseDouble(input);
+                    if (payment < total) {
+                        JOptionPane.showMessageDialog(paymentDialog[0], 
+                            "Insufficient payment. Please enter an amount equal to or greater than the total.",
+                            "Insufficient Payment", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    double change = payment - total;
+                    paymentHolder[0] = payment;
+                    changeHolder[0] = change;
+                    isEcashPayment[0] = false;
+                    paymentDialog[0].dispose();
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(paymentDialog[0], 
+                        "Please enter a valid payment amount.", 
+                        "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                // For E-Cash, we wait for the completeQrPaymentButton action
+                JOptionPane.showMessageDialog(paymentDialog[0],
+                    "Please complete your payment by scanning the QR code and clicking 'I've Completed Payment'.",
+                    "E-Cash Payment", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        
+        cancelButton.addActionListener(e -> {
+            paymentDialog[0].dispose();
+        });
+        
+        buttonPanel.add(confirmButton);
         buttonPanel.add(cancelButton);
-        buttonPanel.add(verifyButton);
+        paymentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        paymentPanel.add(buttonPanel);
         
-        contentPanel.add(headerLabel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
-        contentPanel.add(instructionLabel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 25)));
-        contentPanel.add(idTypePanel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        contentPanel.add(idNumberPanel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
-        contentPanel.add(employeePanel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        contentPanel.add(errorLabel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        // Show the payment dialog and wait for user interaction
+        paymentDialog[0].setVisible(true);
         
-        verificationDialog.add(contentPanel, BorderLayout.CENTER);
-        verificationDialog.add(buttonPanel, BorderLayout.SOUTH);
-        verificationDialog.setVisible(true);
+        // If dialog was closed without completing a payment, return
+        if (!isEcashPayment[0] && paymentHolder[0] == 0.0) {
+            return; // Payment was cancelled
+        }
+
+        // Show receipt preview with payment and change
+        JTextArea receiptArea = new JTextArea(
+            isEcashPayment[0] 
+            ? getFormattedReceiptWithEcashPayment(total) 
+            : getFormattedReceiptWithPayment(paymentHolder[0], changeHolder[0])
+        );
+        receiptArea.setEditable(false);
+        receiptArea.setFont(new Font("Monospaced", Font.PLAIN, 16));
+
+        JScrollPane receiptScrollPane = new JScrollPane(receiptArea);
+        // Increase the preferred size to show more content without scrolling
+        receiptScrollPane.setPreferredSize(new Dimension(800, 700));
+
+        int option = JOptionPane.showConfirmDialog(this,
+                receiptScrollPane,
+                "Confirm Purchase",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (option == JOptionPane.OK_OPTION) { // Process the purchase
+            CartManager.saveReceipt();
+
+            // Clear the cart after updating inventory
+            clearCart();
+
+            // Update cart count label to 0 after clearing cart
+            updateCartCount();
+
+            updateInventoryStock();
+
+            // Also update cart counters in other pages if needed
+            if (parent != null) {
+                parent.updateAllCartCounters();
+            }
+
+            // Show success message
+            JOptionPane.showMessageDialog(this,
+                    "Thank you for your purchase!\nPlease collect your items.",
+                    "Purchase Complete",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            // Return to main page
+            if (parent != null) {
+                parent.showMainPage();
+            }
+        }
+    }
+
+    private void updateInventoryStock() {
+        // Get all items from the cart
+        Map<String, Integer> cartItems = CartManager.getCartItems();
+
+        // Update inventory stock for each item
+        for (Map.Entry<String, Integer> entry : cartItems.entrySet()) {
+            String itemName = entry.getKey();
+            int quantity = entry.getValue();
+
+            // Get the item from inventory
+            InventoryItem item = InventoryManager.getInstance().getItemByName(itemName);
+
+            if (item != null) {
+                // Reduce stock quantity
+                int currentStock = item.getStockQuantity();
+                item.setStockQuantity(currentStock - quantity);
+
+                // Update the item in inventory
+                InventoryManager.getInstance().updateItem(item);
+            }
+        }
+    }
+
+    // Add this helper method to show payment and change in the receipt
+    private String getFormattedReceiptWithPayment(double payment, double change) {
+        StringBuilder receipt = new StringBuilder();
+        receipt.append(CartManager.getFormattedReceipt());
+        receipt.append(String.format("Payment:                      ₱%7.2f\n", payment));
+        receipt.append(String.format("Change:                       ₱%7.2f\n", change));
+        receipt.append("==================================\n");
+        return receipt.toString();
+    }
+
+    // Add this helper method to generate a mock QR code
+    private void generateMockQrCode(JLabel qrLabel, double amount) {
+        // Create a simple mock QR code (a black and white grid)
+        int size = 200;
+        BufferedImage qrImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = qrImage.createGraphics();
+        
+        // Fill with white background
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, size, size);
+        
+        // Draw black border
+        g.setColor(Color.BLACK);
+        g.drawRect(5, 5, size-10, size-10);
+        
+        // Generate random pattern for QR code
+        g.setColor(Color.BLACK);
+        int blockSize = 10;
+        Random rand = new Random((long) (amount * 1000)); // Use amount as seed for consistent generation
+        
+        for (int y = 10; y < size-10; y += blockSize) {
+            for (int x = 10; x < size-10; x += blockSize) {
+                if (rand.nextBoolean()) {
+                    g.fillRect(x, y, blockSize, blockSize);
+                }
+            }
+        }
+        
+        // Add finder patterns (the three squares in corners of QR codes)
+        drawFinderPattern(g, 20, 20, 40);
+        drawFinderPattern(g, size-60, 20, 40);
+        drawFinderPattern(g, 20, size-60, 40);
+        
+        // Add payment info in the center
+        g.setColor(Color.WHITE);
+        g.fillRect(70, 85, 60, 30);
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Monospaced", Font.BOLD, 10));
+        g.drawString("PAY", 80, 100);
+        g.drawString(String.format("₱%.2f", amount), 80, 110);
+        
+        g.dispose();
+        qrLabel.setIcon(new ImageIcon(qrImage));
     }
     
+    private void drawFinderPattern(Graphics2D g, int x, int y, int size) {
+        // Outer square
+        g.setColor(Color.BLACK);
+        g.fillRect(x, y, size, size);
+        
+        // Middle white square
+        g.setColor(Color.WHITE);
+        g.fillRect(x + size/7, y + size/7, size - 2*size/7, size - 2*size/7);
+        
+        // Inner black square
+        g.setColor(Color.BLACK);
+        g.fillRect(x + 2*size/7, y + 2*size/7, size - 4*size/7, size - 4*size/7);
+    }
+    
+    // Add this helper method to show e-cash payment in the receipt
+    private String getFormattedReceiptWithEcashPayment(double amount) {
+        StringBuilder receipt = new StringBuilder();
+        receipt.append(CartManager.getFormattedReceipt());
+        receipt.append(String.format("Payment Method:               E-Cash\n"));
+        receipt.append(String.format("Amount:                       ₱%7.2f\n", amount));
+        receipt.append("==================================\n");
+        return receipt.toString();
+    }
+
     private void showEmptyCartMessage() {
         itemsPanel.removeAll();
-        
+
         JPanel emptyCartPanel = new JPanel();
         emptyCartPanel.setLayout(new BoxLayout(emptyCartPanel, BoxLayout.Y_AXIS));
         emptyCartPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         emptyCartPanel.setBackground(Color.WHITE);
-        emptyCartPanel.setBorder(BorderFactory.createEmptyBorder(80, 0, 80, 0)); // More padding
-        
+        emptyCartPanel.setBorder(BorderFactory.createEmptyBorder(80, 0, 80, 0));
+
         JLabel emptyCartIcon = new JLabel("🛒");
-        emptyCartIcon.setFont(new Font("Segoe UI", Font.PLAIN, 100)); // Much larger icon
+        emptyCartIcon.setFont(new Font("Segoe UI", Font.PLAIN, 100));
         emptyCartIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
+
         JLabel emptyCartLabel = new JLabel("Your cart is empty");
-        emptyCartLabel.setFont(new Font("Segoe UI", Font.BOLD, 32)); // Larger font
+        emptyCartLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         emptyCartLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
+
         JLabel suggestionLabel = new JLabel("Tap below to continue shopping");
-        suggestionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 20)); // Larger font
+        suggestionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 20));
         suggestionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
+
         JButton shopButton = createStyledButton("BROWSE PRODUCTS");
         shopButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        shopButton.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Larger font
-        shopButton.setMaximumSize(new Dimension(300, 60)); // Fixed width, taller
+        shopButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        shopButton.setMaximumSize(new Dimension(300, 60));
         shopButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new FoodsAndBeveragesPage();  // Open the foods page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
-        
+
         emptyCartPanel.add(emptyCartIcon);
         emptyCartPanel.add(Box.createRigidArea(new Dimension(0, 30)));
         emptyCartPanel.add(emptyCartLabel);
@@ -602,154 +925,136 @@ public class CartPage extends JFrame {
         emptyCartPanel.add(suggestionLabel);
         emptyCartPanel.add(Box.createRigidArea(new Dimension(0, 40)));
         emptyCartPanel.add(shopButton);
-        
+
         itemsPanel.add(emptyCartPanel);
         itemsPanel.revalidate();
         itemsPanel.repaint();
     }
-    
-    private void updateCartPage() {
-        dispose();
-        new CartPage();
+
+    private void showIdVerificationDialog() {
+        verificationDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "ID Verification",
+                Dialog.ModalityType.APPLICATION_MODAL);
+        verificationDialog.setSize(400, 300);
+        verificationDialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Please verify eligibility");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Checkbox for staff verification
+        JCheckBox staffVerifiedCheckbox = new JCheckBox("ID has been verified by staff");
+        staffVerifiedCheckbox.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        staffVerifiedCheckbox.setAlignmentX(Component.CENTER_ALIGNMENT);
+        staffVerifiedCheckbox.setBackground(panel.getBackground());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+
+        JButton verifyButton = new JButton("Verify ID");
+        verifyButton.setPreferredSize(new Dimension(120, 40));
+        verifyButton.setEnabled(false); // Disabled by default
+
+        // Enable verify button only if checkbox is checked
+        staffVerifiedCheckbox.addActionListener(e -> {
+            verifyButton.setEnabled(staffVerifiedCheckbox.isSelected());
+        });
+
+        verifyButton.addActionListener(e -> {
+            isDiscountApplied = true;
+            CartManager.applyDiscount(true);
+            updateCartSummary();
+            verificationDialog.dispose();
+        });
+
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.setPreferredSize(new Dimension(120, 40));
+        cancelButton.addActionListener(e -> verificationDialog.dispose());
+
+        buttonPanel.add(verifyButton);
+        buttonPanel.add(cancelButton);
+
+        panel.add(titleLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(staffVerifiedCheckbox);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(buttonPanel);
+
+        verificationDialog.add(panel);
+        verificationDialog.setVisible(true);
     }
 
-    /**
-     * Shows a dialog for the customer to request assistance
-     */
     private void showHelpRequestDialog() {
-        JDialog helpDialog = new JDialog(this, "Request Assistance", true);
-        helpDialog.setSize(450, 350);
+        JDialog helpDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Request Assistance",
+                Dialog.ModalityType.APPLICATION_MODAL);
+        helpDialog.setSize(400, 300);
         helpDialog.setLocationRelativeTo(this);
-        helpDialog.setLayout(new BorderLayout());
-        
-        JPanel contentPanel = new JPanel(new BorderLayout(0, 15));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        contentPanel.setBackground(ACCENT_COLOR);
-        
-        // Header
-        JLabel headerLabel = new JLabel("How can we help you?");
-        headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        headerLabel.setForeground(PRIMARY_COLOR);
-        
-        // Form panel
-        JPanel formPanel = new JPanel(new GridLayout(3, 1, 0, 15));
-        formPanel.setBackground(ACCENT_COLOR);
-        
-        // Issue type selection
-        JPanel issuePanel = new JPanel(new BorderLayout(0, 5));
-        issuePanel.setBackground(ACCENT_COLOR);
-        JLabel issueLabel = new JLabel("Type of Assistance:");
-        issueLabel.setFont(REGULAR_FONT);
-        
-        String[] issueTypes = {
-            "Payment Issue",
-            "Cart Problem",
-            "Product Questions",
-            "Discount Help",
-            "Other"
-        };
-        
-        JComboBox<String> issueComboBox = new JComboBox<>(issueTypes);
-        issueComboBox.setFont(REGULAR_FONT);
-        
-        issuePanel.add(issueLabel, BorderLayout.NORTH);
-        issuePanel.add(issueComboBox, BorderLayout.CENTER);
-        
-        // Details field
-        JPanel detailsPanel = new JPanel(new BorderLayout(0, 5));
-        detailsPanel.setBackground(ACCENT_COLOR);
-        JLabel detailsLabel = new JLabel("Additional Details (optional):");
-        detailsLabel.setFont(REGULAR_FONT);
-        
-        JTextArea detailsArea = new JTextArea(4, 20);
-        detailsArea.setFont(REGULAR_FONT);
-        detailsArea.setLineWrap(true);
-        detailsArea.setWrapStyleWord(true);
-        detailsArea.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
-        
-        JScrollPane detailsScrollPane = new JScrollPane(detailsArea);
-        
-        detailsPanel.add(detailsLabel, BorderLayout.NORTH);
-        detailsPanel.add(detailsScrollPane, BorderLayout.CENTER);
-        
-        // Urgency level
-        JPanel urgencyPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        urgencyPanel.setBackground(ACCENT_COLOR);
-        
-        JLabel urgencyLabel = new JLabel("Is this urgent?");
-        urgencyLabel.setFont(REGULAR_FONT);
-        
-        JCheckBox urgentCheckBox = new JCheckBox("Yes, I need immediate assistance");
-        urgentCheckBox.setFont(REGULAR_FONT);
-        urgentCheckBox.setBackground(ACCENT_COLOR);
-        
-        urgencyPanel.add(urgencyLabel);
-        urgencyPanel.add(urgentCheckBox);
-        
-        // Add all form components
-        formPanel.add(issuePanel);
-        formPanel.add(detailsPanel);
-        formPanel.add(urgencyPanel);
-        
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBackground(ACCENT_COLOR);
-        
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.setFont(REGULAR_FONT);
-        cancelButton.addActionListener(e -> helpDialog.dispose());
-        
-        JButton submitButton = new JButton("Request Help");
-        submitButton.setFont(BUTTON_FONT);
-        submitButton.setBackground(PRIMARY_COLOR);
-        submitButton.setForeground(Color.WHITE);
-        submitButton.addActionListener(e -> {
-            String issueType = (String) issueComboBox.getSelectedItem();
-            String details = detailsArea.getText().trim();
-            boolean isUrgent = urgentCheckBox.isSelected();
-            
-            // Format details with urgency info
-            if (isUrgent) {
-                details = "[URGENT] " + details;
-            }
-            
-            // Add cart information
-            int itemCount = CartManager.getTotalItems();
-            double cartTotal = CartManager.getTotal();
-            details += String.format("\nCart Info: %d items, Total: ₱%.2f", itemCount, cartTotal);
-            
-            // Submit help request to the manager
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Need help with your cart?");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton assistanceButton = createStyledButton("Request Staff Assistance");
+        assistanceButton.setMaximumSize(new Dimension(250, 50));
+        assistanceButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        assistanceButton.addActionListener(e -> {
             HelpRequestManager.getInstance().submitRequest(
-                "Shopping Cart", 
-                issueType, 
-                details
-            );
-            
-            // Confirmation message
-            JOptionPane.showMessageDialog(helpDialog,
-                "Your help request has been submitted.\nA staff member will assist you shortly.",
-                "Help Request Submitted",
-                JOptionPane.INFORMATION_MESSAGE);
-            
+                    "Shopping Cart",
+                    "Customer Assistance",
+                    "Customer needs help with shopping cart");
             helpDialog.dispose();
+            JOptionPane.showMessageDialog(this,
+                    "A staff member will assist you shortly.",
+                    "Help Request Submitted",
+                    JOptionPane.INFORMATION_MESSAGE);
         });
-        
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(submitButton);
-        
-        // Assemble dialog
-        contentPanel.add(headerLabel, BorderLayout.NORTH);
-        contentPanel.add(formPanel, BorderLayout.CENTER);
-        
-        helpDialog.add(contentPanel, BorderLayout.CENTER);
-        helpDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        panel.add(titleLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(assistanceButton);
+
+        helpDialog.add(panel);
         helpDialog.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(CartPage::new);
+    @Override
+    public void backToMain() {
+        if (parent != null) {
+            parent.showMainPage();
+        }
     }
+
+    @Override
+    public void updateCartCount() {
+        int count = CartManager.getTotalItems();
+        if (cartCountLabel != null) {
+            cartCountLabel.setText(String.valueOf(count));
+            cartCountLabel.setVisible(count > 0);
+        }
+    }
+
+    /**
+     * Refreshes the cart UI to reflect the current cart contents.
+     * Call this when switching to the cart page.
+     */
+    public void refreshCart() {
+        itemsPanel.removeAll();
+        populateCartItems();
+        itemsPanel.revalidate();
+        itemsPanel.repaint();
+
+        if (CartManager.isCartEmpty()) {
+            showEmptyCartMessage();
+        } else {
+        }
+            updateCartSummary();
+            updateCartCount();
+    }
+    
 }

@@ -314,6 +314,5 @@ public class CartManager {
     public static void clearCart() {
         instance.itemQuantities.clear();
         instance.itemPrices.clear();
-        discountApplied = false;
     }
 }

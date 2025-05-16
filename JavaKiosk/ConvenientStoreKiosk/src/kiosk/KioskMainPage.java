@@ -1,11 +1,19 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.net.URL;
+import javax.swing.*;
+import javax.swing.border.*;
 
 public class KioskMainPage extends JFrame {
+    private CardLayout cardLayout;
+    private JPanel contentPanel;
+    private PersonalCarePage personalCarePage;
+    private TobaccoAndAlcoholPage tobaccoPage;
+    private FoodsAndBeveragesPage foodsPage;
+    private HouseholdEssentialsPage householdPage;
+    private CartPage cartPage;
+    
     // UI Constants for consistent design
     private final Color PRIMARY_COLOR = new Color(41, 128, 185);
     private final Color ACCENT_COLOR = new Color(52, 152, 219);
@@ -24,14 +32,82 @@ public class KioskMainPage extends JFrame {
     public KioskMainPage(boolean showImmediately) {
         setTitle("Convenient Store Kiosk");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 800);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setUndecorated(true);
         setLayout(new BorderLayout(0, 0));
-        setLocationRelativeTo(null);
         getContentPane().setBackground(BACKGROUND_COLOR);
 
+        cardLayout = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
+        add(contentPanel);
+
+        // Create main panel first
+        JPanel mainPanel = createMainPanel();
+        contentPanel.add(mainPanel, "main");
+
+        // Initialize all pages with this instance
+        cartPage = new CartPage(this);
+        personalCarePage = new PersonalCarePage(this);
+        tobaccoPage = new TobaccoAndAlcoholPage(this);
+        foodsPage = new FoodsAndBeveragesPage(this);
+        householdPage = new HouseholdEssentialsPage(this);
+
+        // Add pages to card layout
+        contentPanel.add(personalCarePage, "personal");
+        contentPanel.add(tobaccoPage, "tobacco");
+        contentPanel.add(foodsPage, "foods");
+        contentPanel.add(householdPage, "household");
+        contentPanel.add(cartPage, "cart");
+
+        showMainPage();
+        
+        if (showImmediately) {
+            setVisible(true);
+        }
+    }
+    
+    public void showMainPage() {
+        cardLayout.show(contentPanel, "main");
+    }
+
+    public void showPersonalCarePage() {
+        cardLayout.show(contentPanel, "personal");
+    }
+
+    public void showTobaccoPage() {
+        cardLayout.show(contentPanel, "tobacco");
+    }
+
+    public void showFoodsPage() {
+        cardLayout.show(contentPanel, "foods");
+    }
+
+    public void showHouseholdPage() {
+        cardLayout.show(contentPanel, "household");
+    }
+
+    public void showCartPage() {
+        cardLayout.show(contentPanel, "cart");
+        cartPage.refreshCart(); // Ensure cart is up-to-date when shown
+        updateAllCartCounters();
+    }
+
+    // Call this after checkout or cart update to sync all cart counters
+    public void updateAllCartCounters() {
+        cartPage.updateCartCount();
+        if (personalCarePage != null) personalCarePage.updateCartCount();
+        if (tobaccoPage != null) tobaccoPage.updateCartCount();
+        if (foodsPage != null) foodsPage.updateCartCount();
+        if (householdPage != null) householdPage.updateCartCount();
+        // If you have a cart count label in main page, update it here as well
+        // Example: updateMainCartCount();
+    }
+
+    private JPanel createMainPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
         // Top Panel with cart and help buttons
         JPanel topPanel = createTopPanel();
-        add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // Title panel with welcome message
         JPanel titlePanel = createTitlePanel();
@@ -46,11 +122,9 @@ public class KioskMainPage extends JFrame {
         contentPanel.add(titlePanel, BorderLayout.NORTH);
         contentPanel.add(categoriesPanel, BorderLayout.CENTER);
         
-        add(contentPanel, BorderLayout.CENTER);
-
-        if (showImmediately) {
-            setVisible(true);
-        }
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        
+        return mainPanel;
     }
     
     private JPanel createTopPanel() {
@@ -65,7 +139,6 @@ public class KioskMainPage extends JFrame {
         
         JLabel storeLabel = new JLabel("Convenient Store Kiosk");
         storeLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        storeLabel.setForeground(Color.WHITE);
         
         leftPanel.add(storeLabel);
         
@@ -98,7 +171,11 @@ public class KioskMainPage extends JFrame {
         ));
         adminButton.setFocusPainted(false);
         adminButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        adminButton.addActionListener(e -> new AdminLoginPanel());
+        adminButton.addActionListener(e -> {
+            AdminLoginPanel adminPanel = new AdminLoginPanel();
+            adminPanel.setVisible(true);
+            setVisible(false);
+        });
         
         JPanel cartPanel = new JPanel(new BorderLayout(5, 0));
         cartPanel.setOpaque(false);
@@ -131,12 +208,7 @@ public class KioskMainPage extends JFrame {
         cartPanel.add(cartCountLabel, BorderLayout.EAST);
         
         // Make the cart button open the cart directly
-        cartButton.addActionListener(e -> {
-            setVisible(false);
-            // Create and show cart panel directly
-            JFrame cartFrame = new CartPage();
-            cartFrame.setVisible(true);
-        });
+        cartButton.addActionListener(e -> showCartPage());
         
         JTextField searchBar = new JTextField(30);
         searchBar.setPreferredSize(new Dimension(280, 40));  // Increased height for touch
@@ -150,6 +222,22 @@ public class KioskMainPage extends JFrame {
         rightPanel.add(helpButton);
         rightPanel.add(adminButton);
         rightPanel.add(cartPanel);
+        
+        // Add close button to the right panel
+        JButton closeButton = new JButton("Exit");
+        closeButton.setToolTipText("Close Application");
+        closeButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        closeButton.setForeground(Color.WHITE);
+        closeButton.setBackground(PRIMARY_COLOR);
+        closeButton.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.WHITE, 1, true),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        closeButton.setFocusPainted(false);
+        closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        closeButton.addActionListener(e -> System.exit(0));
+        
+        rightPanel.add(closeButton);
         
         topPanel.add(leftPanel, BorderLayout.WEST);
         topPanel.add(rightPanel, BorderLayout.EAST);
@@ -183,33 +271,17 @@ public class KioskMainPage extends JFrame {
         JPanel categoriesPanel = new JPanel(new GridLayout(2, 2, 25, 25));
         categoriesPanel.setOpaque(false);
         
-        JPanel foodsCard = createCategoryCard("Foods & Beverages", "foods.png", e -> {
-            setVisible(false);
-            // Create and show food panel directly
-            JFrame foodsFrame = new FoodsAndBeveragesPage();
-            foodsFrame.setVisible(true);
-        });
+        // Foods & Beverages card
+        JPanel foodsCard = createCategoryCard("Foods & Beverages", "foods.png", e -> showFoodsPage());
         
-        JPanel alcoholCard = createCategoryCard("Tobacco & Alcohol (18+)", "alcohol.png", e -> {
-            setVisible(false);
-            // Create and show tobacco/alcohol panel directly
-            JFrame tobaccoFrame = new TobaccoAndAlcoholPage();
-            tobaccoFrame.setVisible(true);
-        });
+        // Tobacco & Alcohol card with age verification
+        JPanel alcoholCard = createCategoryCard("Tobacco & Alcohol (18+)", "alcohol.png", e -> verifyAgeBeforeShowingTobaccoPage());
         
-        JPanel personalCareCard = createCategoryCard("Personal Care & Hygiene", "personal_care.png", e -> {
-            setVisible(false);
-            // Create and show personal care panel directly
-            JFrame personalCareFrame = new PersonalCarePage();
-            personalCareFrame.setVisible(true);
-        });
+        // Personal Care card
+        JPanel personalCareCard = createCategoryCard("Personal Care & Hygiene", "personal_care.png", e -> showPersonalCarePage());
         
-        JPanel householdCard = createCategoryCard("Household Essentials", "household.png", e -> {
-            setVisible(false);
-            // Create and show household panel directly
-            JFrame householdFrame = new HouseholdEssentialsPage();
-            householdFrame.setVisible(true);
-        });
+        // Household Essentials card
+        JPanel householdCard = createCategoryCard("Household Essentials", "household.png", e -> showHouseholdPage());
         
         categoriesPanel.add(foodsCard);
         categoriesPanel.add(alcoholCard);
@@ -400,6 +472,39 @@ public class KioskMainPage extends JFrame {
         helpDialog.setVisible(true);
     }
 
+    /**
+     * Verifies age before showing tobacco and alcohol page
+     */
+    private void verifyAgeBeforeShowingTobaccoPage() {
+        int response = JOptionPane.showConfirmDialog(
+            this,
+            "You must be 18 or older to view this category.\nAre you 18 or older?",
+            "Age Verification",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
+        
+        if (response == JOptionPane.YES_OPTION) {
+            showTobaccoPage();
+        } else {
+            JOptionPane.showMessageDialog(
+                this,
+                "You must be 18 or older to view tobacco and alcohol products.",
+                "Age Verification Failed",
+                JOptionPane.WARNING_MESSAGE
+            );
+            // Return to main page or stay on current page
+            showMainPage();
+        }
+    }
+
+    private static void showPage(JFrame currentFrame, JPanel newPanel) {
+        currentFrame.getContentPane().removeAll();
+        currentFrame.add(newPanel);
+        currentFrame.revalidate();
+        currentFrame.repaint();
+    }
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(KioskMainPage::new);
     }

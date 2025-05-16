@@ -1,13 +1,13 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
 
 /**
  * Admin panel for inventory and expiration management
@@ -71,7 +71,13 @@ public class AdminPanel extends JFrame {
     
     public AdminPanel() {
         setTitle("Admin Panel - Inventory Management");
-        setSize(1200, 800);
+        
+        // Make the window full screen on startup
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        
+        // Keep a minimum size for when user un-maximizes
+        setMinimumSize(new Dimension(1024, 768));
+        
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(BACKGROUND_COLOR);
@@ -98,7 +104,6 @@ public class AdminPanel extends JFrame {
         
         setVisible(true);
     }
-    
     private JPanel createHeaderPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(PRIMARY_COLOR);
@@ -924,7 +929,4 @@ public class AdminPanel extends JFrame {
         super.dispose();
     }
     
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(AdminLoginPanel::new);
-    }
 }

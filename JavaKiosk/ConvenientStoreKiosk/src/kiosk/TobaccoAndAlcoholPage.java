@@ -1,28 +1,26 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.URL;
-import java.util.*;
-import java.util.List;
 import java.text.DecimalFormat;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.border.*;
 
-public class TobaccoAndAlcoholPage extends JFrame {
+public class TobaccoAndAlcoholPage extends JPanel implements KioskPage {
+    private KioskMainPage parent;
     private JPanel productPanel;
-    private Map<String, List<String>> products;
-    private Map<String, List<Double>> prices;
-    private JButton tobaccoButton, alcoholButton, ecigsButton, accessoriesButton;
+    private JButton tobaccoButton, alcoholButton;
     private JButton activeButton;
     private JLabel cartCountLabel;
     private JTextField searchBar;
-    private String currentCategory = "Cigarettes";
+    private String currentCategory = "Tobacco";
     private final DecimalFormat priceFormat = new DecimalFormat("0.00");
-    
+
     // UI Constants
-    private final Color PRIMARY_COLOR = new Color(142, 68, 173); // Purple theme for alcohol/tobacco
-    private final Color ACCENT_COLOR = new Color(155, 89, 182);
+    private final Color PRIMARY_COLOR = new Color(231, 76, 60);
+    private final Color ACCENT_COLOR = new Color(192, 57, 43);
     private final Color BACKGROUND_COLOR = new Color(245, 247, 250);
     private final Color CARD_COLOR = new Color(255, 255, 255);
     private final Color TEXT_DARK = new Color(44, 62, 80);
@@ -32,24 +30,17 @@ public class TobaccoAndAlcoholPage extends JFrame {
     private final Font REGULAR_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
 
-    public TobaccoAndAlcoholPage() {
-        this(true);
-    }
-    
-    public TobaccoAndAlcoholPage(boolean showImmediately) {
-        setTitle("Tobacco & Alcohol");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 800);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout(0, 0));
-        getContentPane().setBackground(BACKGROUND_COLOR);
+    private Map<String, java.util.List<String>> products;
+    private Map<String, java.util.List<Double>> prices;
+    private Map<String, java.util.List<String>> images;
 
-        // Verify age - only proceed if verified
-        if (!verifyAge()) {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
-            return;
-        }
+    public TobaccoAndAlcoholPage(KioskMainPage parent) {
+        this.parent = parent;
+        setLayout(new BorderLayout(0, 0));
+        setBackground(BACKGROUND_COLOR);
+
+        // Age verification is now handled in the main page
+        // before navigating to this page
 
         initProducts();
 
@@ -58,31 +49,27 @@ public class TobaccoAndAlcoholPage extends JFrame {
         JPanel headerPanel = createHeaderPanel();
         JPanel subcategoryPanel = createSubcategoryPanel();
         JScrollPane productScrollPane = createProductScrollPane();
-        
+
         // Assemble the UI
         JPanel mainPanel = new JPanel(new BorderLayout(0, 10));
         mainPanel.setBackground(BACKGROUND_COLOR);
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(headerPanel, BorderLayout.CENTER);
-        
+
         JPanel contentPanel = new JPanel(new BorderLayout(0, 15));
         contentPanel.setBackground(BACKGROUND_COLOR);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
         contentPanel.add(subcategoryPanel, BorderLayout.NORTH);
         contentPanel.add(productScrollPane, BorderLayout.CENTER);
-        
+
         add(mainPanel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
-        
+
         // Initial display
         showProducts("Cigarettes");
         highlightButton(tobaccoButton);
-        
-        if (showImmediately) {
-            setVisible(true);
-        }
     }
-
+    
     private boolean verifyAge() {
         // Create a simple age verification panel
         JPanel panel = new JPanel(new GridLayout(3, 1, 10, 10));
@@ -118,6 +105,7 @@ public class TobaccoAndAlcoholPage extends JFrame {
     private void initProducts() {
         products = new HashMap<>();
         prices = new HashMap<>();
+        images = new HashMap<>();
 
         // Cigarettes
         products.put("Cigarettes", Arrays.asList(
@@ -128,6 +116,9 @@ public class TobaccoAndAlcoholPage extends JFrame {
         prices.put("Cigarettes", Arrays.asList(
             215.0, 215.0, 220.0, 180.0, 180.0, 200.0, 210.0, 170.0, 230.0, 185.0,
             140.0, 210.0, 190.0, 165.0, 110.0
+        ));
+        images.put("Cigarettes", Arrays.asList(
+            "marlborored.png", "marlborogold.jpg", "marlboroiceblast.png", "winstonred.png", "winstonblue.jpg", "camel.jpg", "luckystrike.jpg", "pallmall.jpg", "dunhill.jpg", "philipmorrisjpg", "mighty.jpg", "mevius.jpg", "esse.jpg", "chesterfield.jpg", "fortune.jpg"
         ));
 
         // Beer & Alcohol
@@ -140,28 +131,10 @@ public class TobaccoAndAlcoholPage extends JFrame {
             59.0, 69.0, 89.0, 95.0, 75.0, 65.0, 125.0, 145.0, 150.0, 320.0,
             135.0, 890.0, 1150.0, 1380.0, 950.0
         ));
-
-        // E-cigarettes & Vapes
-        products.put("E-cigarettes", Arrays.asList(
-            "JUUL Starter Kit", "RELX Pod Device", "SMOK Nord Kit", "Vape Pen", "NOVO Kit",
-            "RELX Pods (3-pack)", "JUUL Pods (4-pack)", "SMOK RPM Coils", "Vape Juice (60ml)", "Disposable Vape",
-            "Pod Refills", "Coil Pack", "Battery Pack", "Charging Dock", "Vape Accessories Kit"
-        ));
-        prices.put("E-cigarettes", Arrays.asList(
-            1500.0, 800.0, 1200.0, 650.0, 950.0, 320.0, 450.0, 250.0, 350.0, 400.0,
-            280.0, 200.0, 450.0, 280.0, 350.0
+        images.put("Beer & Alcohol", Arrays.asList(
+            "sanmiguelpalepilsen.png", "redhorse.jpg", "heineken.jpg", "corona.jpg", "smirnoffmule.jpg", "sanmiguellight.jpg", "tanduayrhum.jpg", "gsmblue.jpg", "emperadorlight.jpg", "alfonsolight.jpg", "ginebrasanmiguel.jpg", "absolutvodka.jpg", "jackdaniels.jpg", "johnniewalker.jpg", "josecuervo.jpg"
         ));
 
-        // Accessories
-        products.put("Accessories", Arrays.asList(
-            "Cigarette Lighter", "Zippo Lighter", "Ashtray", "Cigarette Case", "Tobacco Pouch",
-            "Rolling Papers", "Shot Glasses (4-pack)", "Bottle Opener", "Wine Opener", "Beer Cooler",
-            "Ice Bucket", "Wine Glass Set", "Hip Flask", "Whiskey Stones", "Cocktail Shaker"
-        ));
-        prices.put("Accessories", Arrays.asList(
-            20.0, 850.0, 120.0, 150.0, 180.0, 35.0, 250.0, 45.0, 120.0, 150.0,
-            280.0, 450.0, 350.0, 200.0, 380.0
-        ));
     }
 
     private JPanel createTopPanel() {
@@ -169,19 +142,16 @@ public class TobaccoAndAlcoholPage extends JFrame {
         topPanel.setBackground(PRIMARY_COLOR);
         topPanel.setPreferredSize(new Dimension(1100, 60));
         topPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-        
+
         // Left section with menu and search
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         leftPanel.setOpaque(false);
-        
+
         JButton menuButton = createIconButton("☰", "Main Menu");
         menuButton.setFont(new Font("SansSerif", Font.BOLD, 24));
         menuButton.setPreferredSize(new Dimension(45, 40));
-        menuButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
-        });
-        
+        menuButton.addActionListener(e -> backToMain());
+
         searchBar = new JTextField(25);
         searchBar.setPreferredSize(new Dimension(280, 40));
         searchBar.setBorder(BorderFactory.createCompoundBorder(
@@ -191,7 +161,7 @@ public class TobaccoAndAlcoholPage extends JFrame {
         searchBar.setText("Search products...");
         searchBar.setForeground(Color.GRAY);
         searchBar.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        
+
         searchBar.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -200,7 +170,7 @@ public class TobaccoAndAlcoholPage extends JFrame {
                     searchBar.setForeground(Color.BLACK);
                 }
             }
-            
+
             @Override
             public void focusLost(FocusEvent e) {
                 if (searchBar.getText().isEmpty()) {
@@ -209,7 +179,7 @@ public class TobaccoAndAlcoholPage extends JFrame {
                 }
             }
         });
-        
+
         searchBar.addActionListener(e -> {
             String query = searchBar.getText().trim().toLowerCase();
             if (query.isEmpty() || query.equals("search products...")) {
@@ -218,7 +188,7 @@ public class TobaccoAndAlcoholPage extends JFrame {
                 filterProducts(query);
             }
         });
-        
+
         JButton searchButton = createIconButton("🔍", "Search");
         searchButton.setFont(new Font("SansSerif", Font.BOLD, 20));
         searchButton.setPreferredSize(new Dimension(45, 40));
@@ -230,11 +200,11 @@ public class TobaccoAndAlcoholPage extends JFrame {
                 filterProducts(query);
             }
         });
-        
+
         leftPanel.add(menuButton);
         leftPanel.add(searchBar);
         leftPanel.add(searchButton);
-        
+
         // Right section with help, back, and cart
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
         rightPanel.setOpaque(false);
@@ -246,16 +216,17 @@ public class TobaccoAndAlcoholPage extends JFrame {
         JButton backButton = createIconButton("←", "Back");
         backButton.setToolTipText("Return to main menu");
         backButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
-        
+
         JPanel cartPanel = new JPanel(new BorderLayout(5, 0));
         cartPanel.setOpaque(false);
-        
+
         JButton cartButton = createIconButton("🛒", "Cart");
         cartButton.setFont(new Font("SansSerif", Font.BOLD, 18));
-        
+
         cartCountLabel = new JLabel("0");
         cartCountLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         cartCountLabel.setForeground(Color.WHITE);
@@ -265,72 +236,69 @@ public class TobaccoAndAlcoholPage extends JFrame {
         cartCountLabel.setPreferredSize(new Dimension(25, 25));
         cartCountLabel.setBorder(new LineBorder(Color.WHITE, 2, true));
         updateCartCount();
-        
+
         cartPanel.add(cartButton, BorderLayout.WEST);
         cartPanel.add(cartCountLabel, BorderLayout.EAST);
-        
+
         cartButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new CartPage();  // Open the cart page directly
+            if (parent != null) {
+                parent.showCartPage();
+            }
         });
-        
+
         rightPanel.add(helpButton);
         rightPanel.add(backButton);
         rightPanel.add(cartPanel);
-        
+
         topPanel.add(leftPanel, BorderLayout.WEST);
         topPanel.add(rightPanel, BorderLayout.EAST);
-        
+
         return topPanel;
     }
-    
+
     private JPanel createHeaderPanel() {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(ACCENT_COLOR);
         headerPanel.setPreferredSize(new Dimension(1100, 80));
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
-        
+
         JLabel titleLabel = new JLabel("Tobacco & Alcohol (18+)", SwingConstants.LEFT);
         titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(Color.WHITE);
-        
+
         headerPanel.add(titleLabel, BorderLayout.WEST);
-        
+
         return headerPanel;
     }
-    
+
     private JPanel createSubcategoryPanel() {
         JPanel subcategoryPanel = new JPanel(new GridLayout(1, 4, 15, 0));
         subcategoryPanel.setOpaque(false);
         subcategoryPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        
-        tobaccoButton = createCategoryButton("Cigarettes", "🚬");
-        alcoholButton = createCategoryButton("Beer & Alcohol", "🍺");
-        ecigsButton = createCategoryButton("E-cigarettes", "💨");
-        accessoriesButton = createCategoryButton("Accessories", "🔥");
-        
+
+        tobaccoButton = createCategoryButton("Cigarettes");
+        alcoholButton = createCategoryButton("Beer & Alcohol");
+
         subcategoryPanel.add(tobaccoButton);
         subcategoryPanel.add(alcoholButton);
-        subcategoryPanel.add(ecigsButton);
-        subcategoryPanel.add(accessoriesButton);
-        
+
         return subcategoryPanel;
     }
-    
+
     private JScrollPane createProductScrollPane() {
         productPanel = new JPanel();
         productPanel.setLayout(new GridLayout(0, 3, 20, 20));
         productPanel.setBackground(BACKGROUND_COLOR);
-        
+
         JScrollPane scrollPane = new JScrollPane(productPanel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setBackground(BACKGROUND_COLOR);
-        
+
         return scrollPane;
     }
-    
+
     private JButton createIconButton(String icon, String tooltip) {
         JButton button = new JButton(icon);
         button.setToolTipText(tooltip);
@@ -343,9 +311,9 @@ public class TobaccoAndAlcoholPage extends JFrame {
         button.setMargin(new Insets(8, 8, 8, 8));
         return button;
     }
-    
-    private JButton createCategoryButton(String text, String icon) {
-        JButton button = new JButton(icon + " " + text);
+
+    private JButton createCategoryButton(String text) {
+        JButton button = new JButton(text);
         button.setForeground(TEXT_DARK);
         button.setBackground(CARD_COLOR);
         button.setFont(SUBTITLE_FONT);
@@ -355,20 +323,19 @@ public class TobaccoAndAlcoholPage extends JFrame {
             new EmptyBorder(10, 15, 10, 15)
         ));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         button.addActionListener(e -> {
             currentCategory = text;
             showProducts(text);
             highlightButton(button);
         });
-        
+
         return button;
     }
 
     private void showProducts(String category) {
         productPanel.removeAll();
-        
-        // Get correct category key from the map
+
         String actualCategory = null;
         for (String key : products.keySet()) {
             if (key.equalsIgnoreCase(category)) {
@@ -376,49 +343,46 @@ public class TobaccoAndAlcoholPage extends JFrame {
                 break;
             }
         }
-        
+
         if (actualCategory == null) {
-            // Handle case where category is not found
             JLabel noProductsLabel = new JLabel("No products found for category: " + category);
             noProductsLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
             noProductsLabel.setHorizontalAlignment(SwingConstants.CENTER);
             productPanel.setLayout(new BorderLayout());
             productPanel.add(noProductsLabel, BorderLayout.CENTER);
         } else {
-            // Reset to grid layout if we're showing products
             productPanel.setLayout(new GridLayout(0, 3, 20, 20));
-            
-            List<String> items = products.get(actualCategory);
-            List<Double> itemPrices = prices.get(actualCategory);
-            
+
+            java.util.List<String> items = products.get(actualCategory);
+            java.util.List<Double> itemPrices = prices.get(actualCategory);
+
             if (items != null && itemPrices != null && items.size() == itemPrices.size()) {
                 for (int i = 0; i < items.size(); i++) {
                     String itemName = items.get(i);
                     double itemPrice = itemPrices.get(i);
-                    
+
                     JPanel productCard = createProductCard(itemName, itemPrice);
                     productPanel.add(productCard);
                 }
             }
         }
-        
+
         productPanel.revalidate();
         productPanel.repaint();
     }
-    
+
     private void filterProducts(String query) {
         productPanel.removeAll();
-        
+
         int resultCount = 0;
-        
-        // Search through all categories
+
         for (String category : products.keySet()) {
-            List<String> items = products.get(category);
-            List<Double> itemPrices = prices.get(category);
-            
+            java.util.List<String> items = products.get(category);
+            java.util.List<Double> itemPrices = prices.get(category);
+
             for (int i = 0; i < items.size(); i++) {
                 String itemName = items.get(i);
-                
+
                 if (itemName.toLowerCase().contains(query)) {
                     double itemPrice = itemPrices.get(i);
                     JPanel productCard = createProductCard(itemName, itemPrice);
@@ -427,22 +391,21 @@ public class TobaccoAndAlcoholPage extends JFrame {
                 }
             }
         }
-        
+
         if (resultCount == 0) {
-            // No results found
             JPanel noResultsPanel = new JPanel();
             noResultsPanel.setLayout(new BoxLayout(noResultsPanel, BoxLayout.Y_AXIS));
             noResultsPanel.setBackground(BACKGROUND_COLOR);
             noResultsPanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 0));
-            
+
             JLabel iconLabel = new JLabel("🔎");
             iconLabel.setFont(new Font("SansSerif", Font.PLAIN, 48));
             iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            
+
             JLabel messageLabel = new JLabel("No products found for \"" + query + "\"");
             messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
             messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            
+
             JButton clearButton = new JButton("Clear Search");
             clearButton.setAlignmentX(Component.CENTER_ALIGNMENT);
             clearButton.addActionListener(e -> {
@@ -450,24 +413,21 @@ public class TobaccoAndAlcoholPage extends JFrame {
                 searchBar.setForeground(Color.GRAY);
                 showProducts(currentCategory);
             });
-            
+
             noResultsPanel.add(iconLabel);
             noResultsPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             noResultsPanel.add(messageLabel);
             noResultsPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             noResultsPanel.add(clearButton);
-            
+
             productPanel.setLayout(new BorderLayout());
             productPanel.add(noResultsPanel, BorderLayout.CENTER);
         } else {
-            // Ensure we're using the right layout
             productPanel.setLayout(new GridLayout(0, 3, 20, 20));
-        }
-        
-        productPanel.revalidate();
+        }        productPanel.revalidate();
         productPanel.repaint();
     }
-
+    
     private JPanel createProductCard(String itemName, double itemPrice) {
         JPanel card = new JPanel();
         card.setLayout(new BorderLayout(0, 0));
@@ -476,171 +436,126 @@ public class TobaccoAndAlcoholPage extends JFrame {
             BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
             BorderFactory.createEmptyBorder(0, 0, 10, 0)
         ));
-        
-        // Image Panel
+
         JPanel imagePanel = new JPanel(new BorderLayout());
         imagePanel.setBackground(CARD_COLOR);
         imagePanel.setPreferredSize(new Dimension(150, 150));
-        
+
         JLabel imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        // For this category, we'll use placeholders for now
-        JPanel placeholder = new JPanel(new BorderLayout());
-        placeholder.setPreferredSize(new Dimension(120, 120));
-        placeholder.setBackground(new Color(240, 240, 240));
-        placeholder.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        
-        JLabel placeholderText = new JLabel(itemName.substring(0, 1).toUpperCase());
-        placeholderText.setFont(new Font("SansSerif", Font.BOLD, 48));
-        placeholderText.setForeground(new Color(150, 150, 150));
-        placeholderText.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        placeholder.add(placeholderText, BorderLayout.CENTER);
-        imageLabel.setLayout(new BorderLayout());
-        imageLabel.add(placeholder, BorderLayout.CENTER);
-        
+
+        // Try to load an image for the product
+        String itemCategory = getCategoryForItem(itemName);
+        String imageFileName = getImageFileName(itemName, itemCategory);
+        ImageIcon icon = loadImage(imageFileName);
+
+        if (icon != null) {
+            // Resize the image to fit nicely in the product card
+            Image img = icon.getImage();
+            Image resizedImg = img.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+            imageLabel.setIcon(new ImageIcon(resizedImg));
+        } else {
+            // If no image available, use placeholder
+            JPanel placeholder = new JPanel(new BorderLayout());
+            placeholder.setPreferredSize(new Dimension(120, 120));
+            placeholder.setBackground(new Color(240, 240, 240));
+            placeholder.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+            JLabel placeholderText = new JLabel(itemName.substring(0, 1).toUpperCase());
+            placeholderText.setFont(new Font("SansSerif", Font.BOLD, 48));
+            placeholderText.setForeground(new Color(150, 150, 150));
+            placeholderText.setHorizontalAlignment(SwingConstants.CENTER);
+
+            placeholder.add(placeholderText, BorderLayout.CENTER);
+            imageLabel.setLayout(new BorderLayout());
+            imageLabel.add(placeholder, BorderLayout.CENTER);
+        }
+
         imagePanel.add(imageLabel, BorderLayout.CENTER);
-        
-        // Info Panel
+
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(CARD_COLOR);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
-        
+
+        // Center the item name and price
         JLabel nameLabel = new JLabel(itemName);
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         nameLabel.setForeground(TEXT_DARK);
-        
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
         JLabel priceLabel = new JLabel("₱" + priceFormat.format(itemPrice));
         priceLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         priceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        priceLabel.setForeground(new Color(142, 68, 173));
-        
-        // Get the current quantity from cart
-        int currentQty = CartManager.getItemQuantity(itemName);
-        
-        // Controls Panel
-        JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        controlsPanel.setBackground(CARD_COLOR);
-        
-        JButton decrementBtn = new JButton("-");
-        decrementBtn.setFont(new Font("SansSerif", Font.BOLD, 18));
-        decrementBtn.setFocusPainted(false);
-        decrementBtn.setPreferredSize(new Dimension(45, 40));
-        decrementBtn.setEnabled(currentQty > 0);
-        decrementBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        decrementBtn.setMargin(new Insets(5, 10, 5, 10));
-        
-        JLabel quantityLabel = new JLabel(String.valueOf(currentQty));
-        quantityLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
-        quantityLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        quantityLabel.setPreferredSize(new Dimension(50, 40));
-        quantityLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(5, 0, 5, 0)
-        ));
-        
-        JButton incrementBtn = new JButton("+");
-        incrementBtn.setFont(new Font("SansSerif", Font.BOLD, 18));
-        incrementBtn.setFocusPainted(false);
-        incrementBtn.setPreferredSize(new Dimension(45, 40));
-        incrementBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        incrementBtn.setMargin(new Insets(5, 10, 5, 10));
-        
-        controlsPanel.add(decrementBtn);
-        controlsPanel.add(quantityLabel);
-        controlsPanel.add(incrementBtn);
-        
-        // Button Actions
-        decrementBtn.addActionListener(e -> {
-            CartManager.removeItem(itemName);
-            updateProductCard(card, itemName, itemPrice);
-            updateCartCount();
-        });
-        
-        incrementBtn.addActionListener(e -> {
-            CartManager.addItem(itemName, itemPrice);
-            updateProductCard(card, itemName, itemPrice);
-            updateCartCount();
-            
-            // Show a mini notification when item is added
-            showAddToCartFeedback(itemName);
-        });
-        
-        // Age verification label
-        JLabel ageLabel = new JLabel("(18+ Only)");
-        ageLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        ageLabel.setForeground(Color.RED);
-        ageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        // Assemble the card
+        priceLabel.setForeground(ACCENT_COLOR);
+        priceLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JButton addButton = new JButton("Request Staff Assistance");
+        addButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        addButton.setBackground(PRIMARY_COLOR);
+        addButton.setForeground(Color.WHITE);
+        addButton.setFocusPainted(false);
+        addButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        addButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        addButton.addActionListener(e -> showRestrictedMessage());
+
+        infoPanel.add(Box.createVerticalGlue());
         infoPanel.add(nameLabel);
         infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         infoPanel.add(priceLabel);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        infoPanel.add(ageLabel);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        infoPanel.add(controlsPanel);
         infoPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        
+        infoPanel.add(addButton);
+        infoPanel.add(Box.createVerticalGlue());
+
         card.add(imagePanel, BorderLayout.NORTH);
         card.add(infoPanel, BorderLayout.CENTER);
-        
+
         return card;
     }
-    
-    private void showAddToCartFeedback(String itemName) {
-        JWindow notification = new JWindow(this);
-        JPanel content = new JPanel(new BorderLayout());
-        content.setBackground(new Color(50, 50, 50, 220));
-        content.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        
-        JLabel messageLabel = new JLabel(itemName + " added to cart");
-        messageLabel.setForeground(Color.WHITE);
-        messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        content.add(messageLabel, BorderLayout.CENTER);
-        
-        notification.setContentPane(content);
-        notification.pack();
-        
-        // Position at bottom right of screen
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        notification.setLocation(
-            screenSize.width - notification.getWidth() - 20,
-            screenSize.height - notification.getHeight() - 50
-        );
-        
-        notification.setVisible(true);
-        
-        // Auto-hide after 1.5 seconds
-        new javax.swing.Timer(1500, e -> notification.dispose()).start();
+
+    private void showRestrictedMessage() {
+        JOptionPane.showMessageDialog(this,
+            "<html><center>For your safety and in compliance with the law,<br>please ask for staff assistance to purchase tobacco or alcohol products.</center></html>",
+            "Staff Assistance Required",
+            JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void updateProductCard(JPanel card, String itemName, double itemPrice) {
         Container parent = card.getParent();
         int index = -1;
-        
         for (int i = 0; i < parent.getComponentCount(); i++) {
             if (parent.getComponent(i) == card) {
                 index = i;
                 break;
             }
         }
-        
         if (index >= 0) {
             parent.remove(card);
             parent.add(createProductCard(itemName, itemPrice), index);
             parent.revalidate();
             parent.repaint();
         }
+        // After updating, also update all cart counters
+        if (parent instanceof TobaccoAndAlcoholPage && this.parent != null) {
+            this.parent.updateAllCartCounters();
+        }
     }
-    
-    private void updateCartCount() {
+
+    @Override
+    public void backToMain() {
+        if (parent != null) {
+            parent.showMainPage();
+        }
+    }
+
+    @Override
+    public void updateCartCount() {
         int count = CartManager.getTotalItems();
-        cartCountLabel.setText(String.valueOf(count));
-        cartCountLabel.setVisible(count > 0);
+        if (cartCountLabel != null) {
+            cartCountLabel.setText(String.valueOf(count));
+            cartCountLabel.setVisible(count > 0);
+        }
     }
 
     private void highlightButton(JButton button) {
@@ -653,8 +568,37 @@ public class TobaccoAndAlcoholPage extends JFrame {
         activeButton = button;
     }
 
+    private ImageIcon loadImage(String imageName) {
+        URL imageUrl = getClass().getClassLoader().getResource("kiosk/resources/" + imageName);
+        if (imageUrl != null) {
+            return new ImageIcon(imageUrl);
+        } else {
+            // Try with lowercase filename as a fallback
+            imageUrl = getClass().getClassLoader().getResource("kiosk/resources/" + imageName.toLowerCase());
+            if (imageUrl != null) {
+                return new ImageIcon(imageUrl);
+            }
+
+            // Try without the file extension
+            int dotIndex = imageName.lastIndexOf('.');
+            if (dotIndex > 0) {
+                String nameWithoutExtension = imageName.substring(0, dotIndex);
+                String[] extensions = {".jpg", ".png", ".gif"};
+                for (String extension : extensions) {
+                    imageUrl = getClass().getClassLoader().getResource("kiosk/resources/" + nameWithoutExtension + extension);
+                    if (imageUrl != null) {
+                        return new ImageIcon(imageUrl);
+                    }
+                }
+            }
+            
+            System.out.println("Image not found: " + imageName);
+            return null;
+        }
+    }
+
     private void showHelpRequestDialog() {
-        JDialog helpDialog = new JDialog(this, "Request Assistance", true);
+        JDialog helpDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Request Assistance", Dialog.ModalityType.APPLICATION_MODAL);
         helpDialog.setSize(450, 350);
         helpDialog.setLocationRelativeTo(this);
         helpDialog.setLayout(new BorderLayout());
@@ -784,7 +728,60 @@ public class TobaccoAndAlcoholPage extends JFrame {
         helpDialog.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(TobaccoAndAlcoholPage::new);
+    private String getCategoryForItem(String itemName) {
+        for (String category : products.keySet()) {
+            java.util.List<String> items = products.get(category);
+            if (items != null && items.contains(itemName)) {
+                return category;
+            }
+        }
+        return null;
+    }
+
+    private String getImageFileName(String itemName, String category) {
+        // Convert the item name to a simple filename (lowercase, no spaces or special chars)
+        String baseFileName = itemName.toLowerCase().replaceAll("[^a-z0-9]", "") + ".png";
+        
+        // Special cases for specific products
+        if (category != null) {
+            switch (category) {
+                case "Cigarettes":
+                    if (itemName.contains("Marlboro")) {
+                        return "marlboro.png";
+                    } else if (itemName.contains("Winston")) {
+                        return "winston.png";
+                    } else if (itemName.contains("Camel")) {
+                        return "camel.png";
+                    } else if (itemName.contains("Lucky Strike")) {
+                        return "luckystrike.png";
+                    } else {
+                        return "cigarette.png"; // Generic cigarette image
+                    }
+                case "Beer & Alcohol":
+                    if (itemName.contains("San Miguel")) {
+                        return "sanmiguel.png";
+                    } else if (itemName.contains("Red Horse")) {
+                        return "redhorse.png";
+                    } else if (itemName.contains("Heineken")) {
+                        return "heineken.png";
+                    } else if (itemName.contains("Corona")) {
+                        return "corona.png";
+                    } else if (itemName.contains("Vodka")) {
+                        return "vodka.png";
+                    } else if (itemName.contains("Whiskey") || itemName.contains("Daniel") || itemName.contains("Walker")) {
+                        return "whiskey.png";
+                    } else if (itemName.contains("Rhum") || itemName.contains("Rum")) {
+                        return "rum.png";
+                    } else if (itemName.contains("Cuervo")) {
+                        return "tequila.png";
+                    } else {
+                        return "alcohol.png"; // Generic alcohol image
+                    }
+                default:
+                    return baseFileName;
+            }
+        }
+        
+        return baseFileName;
     }
 }

@@ -8,15 +8,20 @@ public class ConvenienceStoreKiosk {
             try {
                 // Set system look and feel for better appearance
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                
+                // Create and configure the main window
+                KioskMainPage mainPage = new KioskMainPage();
+                
+                // Make sure it starts in full screen
+                mainPage.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                mainPage.setUndecorated(true);
+                mainPage.setVisible(true);
+                
+                // Print debugging information
+                System.out.println("Application initialized successfully in full-screen mode");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            
-            // Launch the main page directly
-            new KioskMainPage();
-            
-            // Print debugging information
-            System.out.println("Application initialized successfully");
         });
     }
 }

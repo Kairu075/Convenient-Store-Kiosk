@@ -1,19 +1,19 @@
 package kiosk;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
-import java.text.DecimalFormat;
+import javax.swing.*;
+import javax.swing.border.*;
 
-public class HouseholdEssentialsPage extends JFrame {
+public class HouseholdEssentialsPage extends JPanel implements KioskPage {
     private JPanel productPanel;
     private Map<String, List<String>> products;
     private Map<String, List<Double>> prices;
     private JButton cleaningButton, laundryButton, kitchenButton, papersButton;
+    private CartPage cartPage;
     private JButton activeButton;
     private JLabel cartCountLabel;
     private JTextField searchBar;
@@ -32,17 +32,12 @@ public class HouseholdEssentialsPage extends JFrame {
     private final Font REGULAR_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
 
-    public HouseholdEssentialsPage() {
-        this(true);
-    }
-    
-    public HouseholdEssentialsPage(boolean showImmediately) {
-        setTitle("Household Essentials");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 800);
-        setLocationRelativeTo(null);
+    private KioskMainPage parent;
+
+    public HouseholdEssentialsPage(KioskMainPage parent) {
+        this.parent = parent;
         setLayout(new BorderLayout(0, 0));
-        getContentPane().setBackground(BACKGROUND_COLOR);
+        setBackground(BACKGROUND_COLOR);
 
         initProducts();
 
@@ -70,10 +65,6 @@ public class HouseholdEssentialsPage extends JFrame {
         // Initial display
         showProducts("Cleaning Supplies");
         highlightButton(cleaningButton);
-        
-        if (showImmediately) {
-            setVisible(true);
-        }
     }
 
     private void initProducts() {
@@ -143,8 +134,9 @@ public class HouseholdEssentialsPage extends JFrame {
         menuButton.setFont(new Font("SansSerif", Font.BOLD, 24));
         menuButton.setPreferredSize(new Dimension(45, 40));
         menuButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
         
         searchBar = new JTextField(25);
@@ -211,8 +203,9 @@ public class HouseholdEssentialsPage extends JFrame {
         JButton backButton = createIconButton("←", "Back");
         backButton.setToolTipText("Return to main menu");
         backButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new KioskMainPage();  // Open the main page directly
+            if (parent != null) {
+                parent.showMainPage();
+            }
         });
         
         JPanel cartPanel = new JPanel(new BorderLayout(5, 0));
@@ -235,8 +228,9 @@ public class HouseholdEssentialsPage extends JFrame {
         cartPanel.add(cartCountLabel, BorderLayout.EAST);
         
         cartButton.addActionListener(e -> {
-            dispose();  // Close this window
-            new CartPage();  // Open the cart page directly
+            if (parent != null) {
+                parent.showCartPage();
+            }
         });
         
         rightPanel.add(helpButton);
@@ -511,13 +505,16 @@ public class HouseholdEssentialsPage extends JFrame {
             CartManager.removeItem(itemName);
             updateProductCard(card, itemName, itemPrice);
             updateCartCount();
+            // Update all cart counters after any cart change
+            if (parent != null) parent.updateAllCartCounters();
         });
-        
+
         incrementBtn.addActionListener(e -> {
             CartManager.addItem(itemName, itemPrice);
             updateProductCard(card, itemName, itemPrice);
             updateCartCount();
-            
+            // Update all cart counters after any cart change
+            if (parent != null) parent.updateAllCartCounters();
             showAddToCartFeedback(itemName);
         });
         
@@ -535,7 +532,7 @@ public class HouseholdEssentialsPage extends JFrame {
     }
     
     private void showAddToCartFeedback(String itemName) {
-        JWindow notification = new JWindow(this);
+        JWindow notification = new JWindow(SwingUtilities.getWindowAncestor(this));
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(new Color(50, 50, 50, 220));
         content.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
@@ -562,23 +559,33 @@ public class HouseholdEssentialsPage extends JFrame {
     private void updateProductCard(JPanel card, String itemName, double itemPrice) {
         Container parent = card.getParent();
         int index = -1;
-        
         for (int i = 0; i < parent.getComponentCount(); i++) {
             if (parent.getComponent(i) == card) {
                 index = i;
                 break;
             }
         }
-        
         if (index >= 0) {
             parent.remove(card);
             parent.add(createProductCard(itemName, itemPrice), index);
             parent.revalidate();
             parent.repaint();
         }
+        // After updating, also update all cart counters
+        if (parent instanceof HouseholdEssentialsPage && this.parent != null) {
+            this.parent.updateAllCartCounters();
+        }
     }
     
-    private void updateCartCount() {
+    @Override
+    public void backToMain() {
+        if (parent != null) {
+            parent.showMainPage();
+        }
+    }
+
+    @Override
+    public void updateCartCount() {
         int count = CartManager.getTotalItems();
         cartCountLabel.setText(String.valueOf(count));
         cartCountLabel.setVisible(count > 0);
@@ -595,7 +602,7 @@ public class HouseholdEssentialsPage extends JFrame {
     }
 
     private void showHelpRequestDialog() {
-        JDialog helpDialog = new JDialog(this, "Request Assistance", true);
+        JDialog helpDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Request Assistance", Dialog.ModalityType.APPLICATION_MODAL);
         helpDialog.setSize(450, 350);
         helpDialog.setLocationRelativeTo(this);
         helpDialog.setLayout(new BorderLayout());
@@ -713,7 +720,5 @@ public class HouseholdEssentialsPage extends JFrame {
         helpDialog.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(HouseholdEssentialsPage::new);
-    }
+
 }

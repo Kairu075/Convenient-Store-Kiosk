@@ -24,8 +24,7 @@ public class InventoryManager {
     public static InventoryManager getInstance() {
         return instance;
     }
-    
-    private void initializeSampleInventory() {
+      private void initializeSampleInventory() {
         // Add sample data for existing products
         LocalDate today = LocalDate.now();
         
@@ -49,6 +48,62 @@ public class InventoryManager {
         // Frozen Foods
         addItem(new InventoryItem("Selecta Double Dutch", "Frozen Foods", 98.0, 20, today.plusMonths(2), "FF001", "Selecta"));
         addItem(new InventoryItem("Cornetto Classic", "Frozen Foods", 35.0, 25, today.minusDays(1), "FF002", "Cornetto"));
+        
+        // Personal Care - Bath & Body
+        addItem(new InventoryItem("Soap", "Personal Care", 50.0, 30, today.plusMonths(12), "PC001", "Safeguard"));
+        addItem(new InventoryItem("Shower Gel", "Personal Care", 120.0, 20, today.plusMonths(12), "PC002", "Dove"));
+        addItem(new InventoryItem("Body Lotion", "Personal Care", 200.0, 15, today.plusMonths(12), "PC003", "Nivea"));
+        addItem(new InventoryItem("Body Scrub", "Personal Care", 150.0, 10, today.plusMonths(12), "PC004", "St. Ives"));
+        addItem(new InventoryItem("Bath Salts", "Personal Care", 180.0, 8, today.plusMonths(12), "PC005", "Epsom"));
+        
+        // Personal Care - Hair Care
+        addItem(new InventoryItem("Shampoo", "Personal Care", 100.0, 25, today.plusMonths(12), "PC006", "Pantene"));
+        addItem(new InventoryItem("Conditioner", "Personal Care", 150.0, 20, today.plusMonths(12), "PC007", "Palmolive"));
+        addItem(new InventoryItem("Hair Oil", "Personal Care", 200.0, 12, today.plusMonths(12), "PC008", "Cream Silk"));
+        addItem(new InventoryItem("Hair Mask", "Personal Care", 250.0, 10, today.plusMonths(12), "PC009", "Dove"));
+        addItem(new InventoryItem("Hair Spray", "Personal Care", 300.0, 8, today.plusMonths(12), "PC010", "TRESemmé"));
+        
+        // Personal Care - Oral Care
+        addItem(new InventoryItem("Toothpaste", "Personal Care", 80.0, 30, today.plusMonths(12), "PC011", "Colgate"));
+        addItem(new InventoryItem("Mouthwash", "Personal Care", 150.0, 20, today.plusMonths(12), "PC012", "Listerine"));
+        addItem(new InventoryItem("Dental Floss", "Personal Care", 100.0, 15, today.plusMonths(12), "PC013", "Oral-B"));
+        addItem(new InventoryItem("Toothbrush", "Personal Care", 50.0, 25, today.plusMonths(12), "PC014", "Colgate"));
+        addItem(new InventoryItem("Whitening Strips", "Personal Care", 200.0, 10, today.plusMonths(12), "PC015", "Crest"));
+        
+        // Personal Care - Skin Care
+        addItem(new InventoryItem("Face Wash", "Personal Care", 120.0, 20, today.plusMonths(12), "PC016", "Cetaphil"));
+        addItem(new InventoryItem("Moisturizer", "Personal Care", 250.0, 15, today.plusMonths(12), "PC017", "Neutrogena"));
+        addItem(new InventoryItem("Sunscreen", "Personal Care", 300.0, 12, today.plusMonths(12), "PC018", "Biore"));
+        addItem(new InventoryItem("Face Mask", "Personal Care", 200.0, 15, today.plusMonths(12), "PC019", "The Face Shop"));
+        addItem(new InventoryItem("Serum", "Personal Care", 400.0, 10, today.plusMonths(12), "PC020", "The Ordinary"));
+        
+        // Household - Cleaning Supplies
+        addItem(new InventoryItem("Zonrox Bleach", "Household", 65.0, 30, today.plusMonths(12), "HS001", "Zonrox"));
+        addItem(new InventoryItem("Mr. Clean", "Household", 120.0, 20, today.plusMonths(12), "HS002", "Mr. Clean"));
+        addItem(new InventoryItem("Lysol Disinfectant", "Household", 180.0, 25, today.plusMonths(12), "HS003", "Lysol"));
+        addItem(new InventoryItem("Joy Dishwashing Liquid", "Household", 45.0, 40, today.plusMonths(12), "HS004", "Joy"));
+        addItem(new InventoryItem("Domex Toilet Cleaner", "Household", 75.0, 30, today.plusMonths(12), "HS005", "Domex"));
+        
+        // Household - Laundry Essentials
+        addItem(new InventoryItem("Ariel Detergent", "Household", 120.0, 30, today.plusMonths(12), "HS006", "Ariel"));
+        addItem(new InventoryItem("Tide Detergent", "Household", 130.0, 25, today.plusMonths(12), "HS007", "Tide"));
+        addItem(new InventoryItem("Downy Fabric Conditioner", "Household", 95.0, 35, today.plusMonths(12), "HS008", "Downy"));
+        addItem(new InventoryItem("Surf Powder", "Household", 110.0, 40, today.plusMonths(12), "HS009", "Surf"));
+        addItem(new InventoryItem("Champion Detergent", "Household", 95.0, 30, today.plusMonths(12), "HS010", "Champion"));
+        
+        // Tobacco - Cigarettes
+        addItem(new InventoryItem("Marlboro Red", "Tobacco", 215.0, 50, today.plusMonths(6), "TB001", "Philip Morris"));
+        addItem(new InventoryItem("Marlboro Gold", "Tobacco", 215.0, 45, today.plusMonths(6), "TB002", "Philip Morris"));
+        addItem(new InventoryItem("Marlboro Ice Blast", "Tobacco", 220.0, 40, today.plusMonths(6), "TB003", "Philip Morris"));
+        addItem(new InventoryItem("Winston Red", "Tobacco", 180.0, 35, today.plusMonths(6), "TB004", "JTI"));
+        addItem(new InventoryItem("Winston Blue", "Tobacco", 180.0, 35, today.plusMonths(6), "TB005", "JTI"));
+        
+        // Beer & Alcohol
+        addItem(new InventoryItem("San Miguel Pale Pilsen", "Alcohol", 59.0, 60, today.plusMonths(12), "AL001", "San Miguel"));
+        addItem(new InventoryItem("Red Horse", "Alcohol", 69.0, 60, today.plusMonths(12), "AL002", "San Miguel"));
+        addItem(new InventoryItem("Heineken", "Alcohol", 89.0, 40, today.plusMonths(12), "AL003", "Heineken"));
+        addItem(new InventoryItem("Corona", "Alcohol", 95.0, 40, today.plusMonths(12), "AL004", "Cervecería Modelo"));
+        addItem(new InventoryItem("Smirnoff Mule", "Alcohol", 75.0, 30, today.plusMonths(12), "AL005", "Diageo"));
     }
     
     public List<InventoryItem> getAllItems() {
@@ -124,5 +179,10 @@ public class InventoryManager {
         }
         
         return stockByCategory;
+    }
+
+    public InventoryItem getItemByName(String itemName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getItemByName'");
     }
 }
