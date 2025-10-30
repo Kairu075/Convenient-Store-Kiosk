@@ -1,0 +1,12 @@
+# Ignore compiled Java class files
+*.class
+
+# Ignore build output folders
+bin/
+out/
+build/
+
+# Ignore temporary files
+*.log
+*.tmp
+*.bak
